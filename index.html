@@ -1,0 +1,902 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Gestión de Mantenimiento Correctivo</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  :root {
+    --primary: #1a1a2e; --accent: #c8a84b; --accent-light: #f0d882;
+    --bg: #0f0f1a; --surface: #1e1e2e; --surface2: #252535;
+    --border: rgba(200,168,75,0.25); --border2: rgba(200,168,75,0.5);
+    --text: #e8e8f0; --text-muted: #9090a8;
+    --success: #2ecc71; --danger: #e74c3c; --warning: #f39c12; --info: #3498db;
+    --font: 'Segoe UI', system-ui, sans-serif;
+  }
+  body { background: var(--bg); color: var(--text); font-family: var(--font); min-height: 100vh; }
+  .app { max-width: 960px; margin: 0 auto; padding: 16px; }
+  .header { text-align: center; padding: 24px 0 16px; border-bottom: 1px solid var(--border); margin-bottom: 20px; }
+  .header h1 { font-size: 20px; font-weight: 600; color: var(--accent); letter-spacing: 1px; text-transform: uppercase; }
+  .header p { font-size: 12px; color: var(--text-muted); margin-top: 4px; }
+  .pipeline { display: flex; align-items: center; margin-bottom: 24px; background: var(--surface); border: 1px solid var(--border); border-radius: 10px; overflow: hidden; }
+  .pipe-step { flex: 1; padding: 12px 8px; text-align: center; cursor: pointer; transition: background 0.2s; border-right: 1px solid var(--border); position: relative; }
+  .pipe-step:last-child { border-right: none; }
+  .pipe-step:hover { background: var(--surface2); }
+  .pipe-step.active { background: rgba(200,168,75,0.15); }
+  .pipe-step .ps-icon { font-size: 20px; display: block; margin-bottom: 4px; }
+  .pipe-step .ps-label { font-size: 11px; color: var(--text-muted); font-weight: 500; }
+  .pipe-step .ps-count { position: absolute; top: 6px; right: 8px; background: var(--accent); color: #000; font-size: 10px; font-weight: 700; border-radius: 50%; width: 18px; height: 18px; display: flex; align-items: center; justify-content: center; }
+  .btn { padding: 8px 16px; border: 1px solid var(--border2); background: transparent; color: var(--text); border-radius: 6px; cursor: pointer; font-size: 13px; font-family: var(--font); transition: all 0.2s; display: inline-flex; align-items: center; gap: 6px; }
+  .btn:hover { background: var(--surface2); border-color: var(--accent); color: var(--accent); }
+  .btn.btn-primary { background: var(--accent); color: #000; border-color: var(--accent); font-weight: 600; }
+  .btn.btn-primary:hover { background: var(--accent-light); }
+  .btn.btn-danger { background: var(--danger); color: #fff; border-color: var(--danger); }
+  .btn.btn-success { background: var(--success); color: #000; border-color: var(--success); }
+  .btn.btn-sm { padding: 5px 10px; font-size: 12px; }
+  .btn:disabled { opacity: 0.5; cursor: not-allowed; }
+  .panel { background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: 20px; margin-bottom: 16px; }
+  .panel-header { display: flex; align-items: center; gap: 10px; margin-bottom: 16px; padding-bottom: 12px; border-bottom: 1px solid var(--border); }
+  .panel-header .ph-icon { font-size: 22px; }
+  .panel-header h2 { font-size: 15px; font-weight: 600; color: var(--accent); }
+  .panel-header .ph-sub { font-size: 12px; color: var(--text-muted); }
+  .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+  .form-grid.cols3 { grid-template-columns: 1fr 1fr 1fr; }
+  .form-grid.cols4 { grid-template-columns: 1fr 1fr 1fr 1fr; }
+  .form-grid.cols1 { grid-template-columns: 1fr; }
+  .field { display: flex; flex-direction: column; gap: 5px; }
+  .field label { font-size: 11px; color: var(--text-muted); font-weight: 500; text-transform: uppercase; letter-spacing: 0.5px; }
+  .field input, .field select, .field textarea {
+    background: var(--surface2); border: 1px solid rgba(255,255,255,0.1); border-radius: 6px;
+    color: var(--text); padding: 8px 10px; font-size: 13px; font-family: var(--font); outline: none; transition: border-color 0.2s;
+  }
+  .field input:focus, .field select:focus, .field textarea:focus { border-color: var(--accent); }
+  .field select option { background: var(--surface2); }
+  .field textarea { resize: vertical; min-height: 80px; }
+  .prog-group { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+  .checklist { display: flex; flex-direction: column; gap: 8px; }
+  .check-item { display: flex; align-items: center; gap: 12px; background: var(--surface2); padding: 10px 14px; border-radius: 6px; border: 1px solid rgba(255,255,255,0.05); }
+  .check-item span { flex: 1; font-size: 13px; }
+  .check-btns { display: flex; gap: 6px; }
+  .check-btn { padding: 4px 12px; border-radius: 4px; border: 1px solid rgba(255,255,255,0.15); background: transparent; color: var(--text-muted); cursor: pointer; font-size: 12px; transition: all 0.15s; }
+  .check-btn.ok { background: rgba(46,204,113,0.2); border-color: var(--success); color: var(--success); }
+  .check-btn.fail { background: rgba(231,76,60,0.2); border-color: var(--danger); color: var(--danger); }
+  .firma-wrap { background: var(--surface2); border: 1px dashed var(--border2); border-radius: 8px; padding: 12px; }
+  .firma-canvas { width: 100%; height: 120px; border-radius: 6px; background: rgba(255,255,255,0.04); cursor: crosshair; display: block; touch-action: none; }
+  .firma-actions { display: flex; gap: 8px; margin-top: 8px; align-items: center; }
+  .firma-actions small { color: var(--text-muted); font-size: 11px; flex: 1; }
+  .records { display: flex; flex-direction: column; gap: 10px; }
+  .record-card { background: var(--surface2); border: 1px solid var(--border); border-radius: 8px; padding: 14px 16px; display: flex; align-items: center; gap: 14px; flex-wrap: wrap; }
+  .record-card .rc-status { font-size: 20px; min-width: 28px; }
+  .record-card .rc-info { flex: 1; min-width: 200px; }
+  .record-card .rc-info h3 { font-size: 14px; font-weight: 600; }
+  .record-card .rc-info p { font-size: 12px; color: var(--text-muted); margin-top: 2px; }
+  .record-card .rc-actions { display: flex; gap: 6px; flex-wrap: wrap; }
+  .badge { display: inline-flex; align-items: center; gap: 4px; padding: 3px 8px; border-radius: 12px; font-size: 11px; font-weight: 600; }
+  .badge-warning { background: rgba(243,156,18,0.2); color: var(--warning); border: 1px solid rgba(243,156,18,0.4); }
+  .badge-success { background: rgba(46,204,113,0.2); color: var(--success); border: 1px solid rgba(46,204,113,0.4); }
+  .badge-info { background: rgba(52,152,219,0.2); color: var(--info); border: 1px solid rgba(52,152,219,0.4); }
+  .divider { border: none; border-top: 1px solid var(--border); margin: 16px 0; }
+  .alert { padding: 12px 16px; border-radius: 8px; font-size: 13px; margin-bottom: 12px; }
+  .alert-success { background: rgba(46,204,113,0.1); border: 1px solid rgba(46,204,113,0.3); color: var(--success); }
+  .alert-info { background: rgba(52,152,219,0.1); border: 1px solid rgba(52,152,219,0.3); color: var(--info); }
+  .alert-danger { background: rgba(231,76,60,0.1); border: 1px solid rgba(231,76,60,0.3); color: var(--danger); }
+  .modal-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.8); z-index: 1000; justify-content: center; align-items: flex-start; padding: 20px; overflow-y: auto; }
+  .modal-overlay.open { display: flex; }
+  .modal { background: var(--surface); border: 1px solid var(--border2); border-radius: 12px; padding: 24px; width: 100%; max-width: 580px; margin: auto; }
+  .modal h2 { font-size: 16px; color: var(--accent); margin-bottom: 4px; }
+  .modal .modal-sub { font-size: 12px; color: var(--text-muted); margin-bottom: 16px; }
+  .section-title { font-size: 12px; color: var(--accent); text-transform: uppercase; letter-spacing: 1px; font-weight: 600; margin: 16px 0 10px; padding-bottom: 4px; border-bottom: 1px solid var(--border); }
+  .verify-box { background: rgba(200,168,75,0.07); border: 1px solid var(--border2); border-radius: 8px; padding: 14px; margin-bottom: 4px; }
+  .spinner { display: inline-block; width: 14px; height: 14px; border: 2px solid rgba(0,0,0,0.3); border-top-color: #000; border-radius: 50%; animation: spin 0.7s linear infinite; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  .loading-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.6); z-index: 2000; justify-content: center; align-items: center; flex-direction: column; gap: 16px; }
+  .loading-overlay.open { display: flex; }
+  .loading-overlay p { color: #fff; font-size: 14px; }
+  .loading-spinner { width: 40px; height: 40px; border: 3px solid rgba(200,168,75,0.3); border-top-color: var(--accent); border-radius: 50%; animation: spin 0.8s linear infinite; }
+  @media (max-width: 600px) {
+    .form-grid { grid-template-columns: 1fr; }
+    .form-grid.cols3 { grid-template-columns: 1fr 1fr; }
+    .form-grid.cols4 { grid-template-columns: 1fr 1fr; }
+    .pipeline { flex-wrap: wrap; }
+    .prog-group { grid-template-columns: 1fr; }
+  }
+</style>
+</head>
+<body>
+
+<div class="loading-overlay" id="loading-overlay">
+  <div class="loading-spinner"></div>
+  <p id="loading-msg">Cargando...</p>
+</div>
+
+<div class="app">
+  <div class="header">
+    <h1>♦ Gestión de Mantenimiento Correctivo</h1>
+    <p>Sistema de control de máquinas — Casino</p>
+  </div>
+
+  <div class="pipeline">
+    <div class="pipe-step" onclick="showTab('lista')" id="pipe-0">
+      <span class="ps-icon">📋</span>
+      <span class="ps-label">Todos los registros</span>
+    </div>
+    <div class="pipe-step" onclick="showTab('egreso')" id="pipe-1">
+      <span class="ps-icon">🔴</span>
+      <span class="ps-label">Etapa 1 · Egreso</span>
+      <span class="ps-count" id="cnt1">0</span>
+    </div>
+    <div class="pipe-step" onclick="showTab('tecnico')" id="pipe-2">
+      <span class="ps-icon">🔧</span>
+      <span class="ps-label">Etapa 2 · Técnico</span>
+      <span class="ps-count" id="cnt2">0</span>
+    </div>
+    <div class="pipe-step" onclick="showTab('inspector')" id="pipe-3">
+      <span class="ps-icon">✅</span>
+      <span class="ps-label">Etapa 3 · Inspector</span>
+      <span class="ps-count" id="cnt3">0</span>
+    </div>
+  </div>
+
+  <div id="alert-area"></div>
+
+  <!-- LISTA -->
+  <div id="tab-lista">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;flex-wrap:wrap;gap:8px;">
+      <div style="display:flex;gap:8px;flex-wrap:wrap;">
+        <input id="search-input" type="text" placeholder="Buscar por N° máquina o isla..."
+          style="background:var(--surface2);border:1px solid rgba(255,255,255,0.1);border-radius:6px;color:var(--text);padding:8px 12px;font-size:13px;font-family:var(--font);outline:none;width:220px;"
+          oninput="renderLista()">
+        <select id="filter-status" onchange="renderLista()"
+          style="background:var(--surface2);border:1px solid rgba(255,255,255,0.1);border-radius:6px;color:var(--text);padding:8px;font-size:13px;font-family:var(--font);outline:none;">
+          <option value="">Todos los estados</option>
+          <option value="egreso">Solo egresadas</option>
+          <option value="tecnico">Solo reparadas</option>
+          <option value="completo">Completadas</option>
+        </select>
+        <button class="btn btn-sm" onclick="cargarDatos()">🔄 Actualizar</button>
+      </div>
+      <button class="btn btn-primary" onclick="showTab('egreso');resetEgresoForm()">+ Nueva Máquina Fuera de Servicio</button>
+    </div>
+    <div id="lista-records" class="records"></div>
+  </div>
+
+  <!-- EGRESO -->
+  <div id="tab-egreso" style="display:none;">
+    <div class="panel">
+      <div class="panel-header">
+        <span class="ph-icon">🔴</span>
+        <div>
+          <h2>Etapa 1 — Egreso de Máquina</h2>
+          <p class="ph-sub">Máquina fuera de servicio · Genera aviso a Técnicos y Juego</p>
+        </div>
+      </div>
+      <div class="section-title">Identificación</div>
+      <div class="form-grid cols3">
+        <div class="field"><label>N° Máquina *</label><input type="text" id="e-maquina" placeholder="Ej: 0042"></div>
+        <div class="field"><label>N° Isla *</label><input type="text" id="e-isla" placeholder="Ej: 07"></div>
+        <div class="field"><label>Fecha y Hora *</label><input type="datetime-local" id="e-fecha"></div>
+      </div>
+      <div class="section-title" style="margin-top:14px;">Motivo del Egreso</div>
+      <div class="form-grid cols1">
+        <div class="field">
+          <label>Motivo *</label>
+          <select id="e-motivo">
+            <option value="">— Seleccionar —</option>
+            <option>Borrado total</option><option>Borrado parcial</option><option>Clear</option>
+            <option>Cambio de layout</option><option>Cambio de juego</option><option>Cambio de denominación</option>
+            <option>Falla técnica</option><option>Mantenimiento preventivo</option><option>Baja transitoria</option>
+          </select>
+        </div>
+      </div>
+      <div class="section-title" style="margin-top:14px;">Contadores</div>
+      <div class="form-grid cols3">
+        <div class="field"><label>COIN IN ($)</label><input type="text" id="e-coinin" placeholder="0,00"></div>
+        <div class="field"><label>COIN OUT ($)</label><input type="text" id="e-coinout" placeholder="0,00"></div>
+        <div class="field"><label>Jackpot ($)</label><input type="text" id="e-jackpot" placeholder="0,00"></div>
+      </div>
+      <div class="section-title" style="margin-top:14px;">Progresivos</div>
+      <div class="prog-group">
+        <div class="field"><label>Progresivo 1 ($)</label><input type="text" id="e-prog1" placeholder="0,00"></div>
+        <div class="field"><label>Progresivo 2 ($)</label><input type="text" id="e-prog2" placeholder="0,00"></div>
+        <div class="field"><label>Progresivo 3 ($)</label><input type="text" id="e-prog3" placeholder="0,00"></div>
+        <div class="field"><label>Progresivo 4 ($)</label><input type="text" id="e-prog4" placeholder="0,00"></div>
+      </div>
+      <div class="form-grid cols1" style="margin-top:12px;">
+        <div class="field"><label>% de Devolución</label><input type="text" id="e-devolucion" placeholder="Ej: 94,5%"></div>
+      </div>
+      <div class="section-title" style="margin-top:14px;">Firma del Operador</div>
+      <div class="field" style="margin-bottom:10px;"><label>Nombre del Operador *</label><input type="text" id="e-operador" placeholder="Nombre completo"></div>
+      <div class="firma-wrap">
+        <canvas id="canvas-egreso" class="firma-canvas" width="800" height="150"></canvas>
+        <div class="firma-actions"><small>Firme con mouse o dedo</small><button class="btn btn-sm" onclick="clearCanvas('canvas-egreso')">Limpiar</button></div>
+      </div>
+      <hr class="divider">
+      <div style="display:flex;gap:10px;justify-content:flex-end;flex-wrap:wrap;">
+        <button class="btn" onclick="showTab('lista')">Cancelar</button>
+        <button class="btn btn-primary" id="btn-guardar-egreso" onclick="guardarEgreso()">📤 Registrar Egreso y Enviar Aviso</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- TECNICO -->
+  <div id="tab-tecnico" style="display:none;">
+    <div class="panel">
+      <div class="panel-header">
+        <span class="ph-icon">🔧</span>
+        <div>
+          <h2>Etapa 2 — Registro Técnico</h2>
+          <p class="ph-sub">Ingrese el número de máquina para cargar sobre el egreso existente</p>
+        </div>
+      </div>
+      <div id="tecnico-buscar">
+        <div class="form-grid cols3">
+          <div class="field"><label>N° Máquina</label><input type="text" id="t-buscar-maq" placeholder="Ej: 0042" oninput="buscarParaTecnico()"></div>
+        </div>
+        <div id="tecnico-resultados" style="margin-top:12px;"></div>
+      </div>
+      <div id="tecnico-form" style="display:none;">
+        <hr class="divider">
+        <div id="tecnico-egreso-ref" class="alert alert-info" style="margin-bottom:14px;"></div>
+        <div class="section-title">Datos del Informe Técnico</div>
+        <div class="form-grid cols3">
+          <div class="field"><label>N° Informe Técnico</label><input type="text" id="t-informe" placeholder="Opcional"></div>
+          <div class="field"><label>N° Máquina</label><input type="text" id="t-maquina" readonly style="opacity:0.6;"></div>
+          <div class="field"><label>N° Isla</label><input type="text" id="t-isla" readonly style="opacity:0.6;"></div>
+        </div>
+        <div class="form-grid cols1" style="margin-top:8px;">
+          <div class="field"><label>Fecha y Hora de Reparación *</label><input type="datetime-local" id="t-fecha"></div>
+        </div>
+        <div class="section-title" style="margin-top:14px;">Solución Aplicada</div>
+        <div class="field"><label>Descripción de la solución *</label><textarea id="t-solucion" placeholder="Describa detalladamente la reparación realizada..."></textarea></div>
+        <div class="section-title" style="margin-top:14px;">Firma del Técnico</div>
+        <div class="field" style="margin-bottom:10px;"><label>Nombre del Técnico *</label><input type="text" id="t-tecnico" placeholder="Nombre completo"></div>
+        <div class="firma-wrap">
+          <canvas id="canvas-tecnico" class="firma-canvas" width="800" height="150"></canvas>
+          <div class="firma-actions"><small>Firme con mouse o dedo</small><button class="btn btn-sm" onclick="clearCanvas('canvas-tecnico')">Limpiar</button></div>
+        </div>
+        <hr class="divider">
+        <div style="display:flex;gap:10px;justify-content:flex-end;flex-wrap:wrap;">
+          <button class="btn" onclick="cancelarTecnico()">Cancelar</button>
+          <button class="btn btn-primary" id="btn-guardar-tecnico" onclick="guardarTecnico()">🔔 Registrar Reparación y Enviar Alerta</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- INSPECTOR -->
+  <div id="tab-inspector" style="display:none;">
+    <div class="panel">
+      <div class="panel-header">
+        <span class="ph-icon">✅</span>
+        <div>
+          <h2>Etapa 3 — Inspección y Reingreso</h2>
+          <p class="ph-sub">Control final antes de poner la máquina en servicio</p>
+        </div>
+      </div>
+      <div id="inspector-buscar">
+        <div class="form-grid cols3">
+          <div class="field"><label>N° Máquina</label><input type="text" id="i-buscar-maq" placeholder="Ej: 0042" oninput="buscarParaInspector()"></div>
+        </div>
+        <div id="inspector-resultados" style="margin-top:12px;"></div>
+      </div>
+      <div id="inspector-form" style="display:none;">
+        <hr class="divider">
+        <div id="inspector-ref" class="alert alert-info" style="margin-bottom:14px;"></div>
+        <div class="section-title">Identificación</div>
+        <div class="form-grid cols3">
+          <div class="field"><label>N° Máquina</label><input type="text" id="i-maquina" readonly style="opacity:0.6;"></div>
+          <div class="field"><label>N° Isla</label><input type="text" id="i-isla" readonly style="opacity:0.6;"></div>
+          <div class="field"><label>Fecha y Hora *</label><input type="datetime-local" id="i-fecha"></div>
+        </div>
+        <div class="form-grid cols3" style="margin-top:8px;">
+          <div class="field"><label>N° Informe Técnico</label><input type="text" id="i-informe" readonly style="opacity:0.6;"></div>
+          <div class="field"><label>COIN IN ($)</label><input type="text" id="i-coinin" placeholder="0,00"></div>
+        </div>
+        <div class="section-title" style="margin-top:14px;">Verificación de Configuración</div>
+        <div class="verify-box">
+          <div class="form-grid cols4">
+            <div class="field"><label>% Devolución</label><input type="text" id="i-devolucion" placeholder="Ej: 94,5%"></div>
+            <div class="field"><label>Denominación</label><input type="text" id="i-denominacion" placeholder="Ej: $100"></div>
+            <div class="field"><label>Apuesta Mínima ($)</label><input type="text" id="i-apuesta-min" placeholder="Ej: 50"></div>
+            <div class="field"><label>Apuesta Máxima ($)</label><input type="text" id="i-apuesta-max" placeholder="Ej: 5.000"></div>
+          </div>
+          <div class="form-grid cols1" style="margin-top:10px;">
+            <div class="field"><label>N° MDC</label><input type="text" id="i-mdc" placeholder="Número de módulo de control"></div>
+          </div>
+        </div>
+        <div class="section-title" style="margin-top:14px;">Control de Aceptación de Billetes</div>
+        <div class="checklist" id="checklist-billetes"></div>
+        <div class="section-title" style="margin-top:14px;">Controles Adicionales</div>
+        <div class="checklist" id="checklist-extras"></div>
+        <div class="section-title" style="margin-top:14px;">Firma del Inspector</div>
+        <div class="field" style="margin-bottom:10px;"><label>Nombre del Inspector *</label><input type="text" id="i-inspector" placeholder="Nombre completo"></div>
+        <div class="firma-wrap">
+          <canvas id="canvas-inspector" class="firma-canvas" width="800" height="150"></canvas>
+          <div class="firma-actions"><small>Firme con mouse o dedo</small><button class="btn btn-sm" onclick="clearCanvas('canvas-inspector')">Limpiar</button></div>
+        </div>
+        <hr class="divider">
+        <div style="display:flex;gap:10px;justify-content:flex-end;flex-wrap:wrap;">
+          <button class="btn" onclick="cancelarInspector()">Cancelar</button>
+          <button class="btn btn-success" id="btn-guardar-inspector" onclick="guardarInspector()">✅ Completar Inspección y Reingresar Máquina</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="modal-overlay" id="modal-aviso">
+  <div class="modal">
+    <h2 id="modal-title"></h2>
+    <p class="modal-sub" id="modal-sub"></p>
+    <div id="modal-body"></div>
+    <div style="display:flex;gap:10px;justify-content:flex-end;margin-top:16px;">
+      <button class="btn btn-primary" onclick="closeModal('modal-aviso')">Cerrar</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// ============================================================
+// CONFIGURACIÓN — URL del conector Google Apps Script
+// ============================================================
+const API_URL = 'https://script.google.com/macros/s/AKfycbzWXeVQRj2Tvh-bDo0nX3YAfMmTV8Og6Kp6dQXYcYR89v74AIhoaBpTJSVN4NdOlSmy/exec';
+
+// ============================================================
+// ESTADO GLOBAL
+// ============================================================
+let registros = [];
+let currentTecnicoId = null;
+let currentInspectorId = null;
+const billetes = ['$20.000','$10.000','$2.000','$1.000','$500','$200','$100'];
+const extras = ['Descuento AFT correcto','Acredita tickets correctamente'];
+const checkState = {};
+
+// ============================================================
+// API — comunicación con Google Sheets
+// ============================================================
+async function apiCall(action, data = null) {
+  let url = API_URL + '?action=' + action;
+  if (data) url += '&data=' + encodeURIComponent(JSON.stringify(data));
+  const resp = await fetch(url);
+  return await resp.json();
+}
+
+async function cargarDatos() {
+  showLoading('Cargando registros...');
+  try {
+    const result = await apiCall('getAll');
+    if (result.registros) {
+      registros = result.registros.map(r => {
+        // reconstruir estructura anidada desde columnas planas
+        return {
+          id: r.id,
+          estado: r.estado,
+          egreso: {
+            maquina: r.e_maquina, isla: r.e_isla, fecha: r.e_fecha,
+            motivo: r.e_motivo, coinin: r.e_coinin, coinout: r.e_coinout,
+            jackpot: r.e_jackpot, prog1: r.e_prog1, prog2: r.e_prog2,
+            prog3: r.e_prog3, prog4: r.e_prog4, devolucion: r.e_devolucion,
+            operador: r.e_operador, firma: r.e_firma
+          },
+          tecnico: r.t_fecha ? {
+            fecha: r.t_fecha, informe: r.t_informe, solucion: r.t_solucion,
+            tecnico: r.t_tecnico, firma: r.t_firma,
+            maquina: r.e_maquina, isla: r.e_isla
+          } : null,
+          inspector: r.i_fecha ? {
+            fecha: r.i_fecha, informe: r.i_informe, coinin: r.i_coinin,
+            devolucion: r.i_devolucion, denominacion: r.i_denominacion,
+            apuestaMin: r.i_apuesta_min, apuestaMax: r.i_apuesta_max,
+            mdc: r.i_mdc, inspector: r.i_inspector, firma: r.i_firma,
+            checksBilletes: r.i_checks_billetes ? JSON.parse(r.i_checks_billetes) : {},
+            checksExtras: r.i_checks_extras ? JSON.parse(r.i_checks_extras) : {},
+            maquina: r.e_maquina, isla: r.e_isla
+          } : null
+        };
+      });
+    }
+  } catch(e) {
+    showAlert('⚠ Error al conectar con la base de datos. Revisá tu conexión.', 'danger');
+  }
+  hideLoading();
+  updateCounters();
+  renderLista();
+}
+
+async function guardarEnSheets(action, flatData) {
+  try {
+    const result = await apiCall(action, flatData);
+    if (result.error) throw new Error(result.error);
+    return true;
+  } catch(e) {
+    showAlert('⚠ Error al guardar: ' + e.message, 'danger');
+    return false;
+  }
+}
+
+function flattenRegistro(r) {
+  return {
+    id: r.id,
+    estado: r.estado,
+    e_maquina: r.egreso.maquina,
+    e_isla: r.egreso.isla,
+    e_fecha: r.egreso.fecha,
+    e_motivo: r.egreso.motivo,
+    e_coinin: r.egreso.coinin || '',
+    e_coinout: r.egreso.coinout || '',
+    e_jackpot: r.egreso.jackpot || '',
+    e_prog1: r.egreso.prog1 || '',
+    e_prog2: r.egreso.prog2 || '',
+    e_prog3: r.egreso.prog3 || '',
+    e_prog4: r.egreso.prog4 || '',
+    e_devolucion: r.egreso.devolucion || '',
+    e_operador: r.egreso.operador,
+    e_firma: r.egreso.firma || '',
+    t_fecha: r.tecnico ? r.tecnico.fecha : '',
+    t_informe: r.tecnico ? r.tecnico.informe : '',
+    t_solucion: r.tecnico ? r.tecnico.solucion : '',
+    t_tecnico: r.tecnico ? r.tecnico.tecnico : '',
+    t_firma: r.tecnico ? r.tecnico.firma || '' : '',
+    i_fecha: r.inspector ? r.inspector.fecha : '',
+    i_informe: r.inspector ? r.inspector.informe : '',
+    i_coinin: r.inspector ? r.inspector.coinin : '',
+    i_devolucion: r.inspector ? r.inspector.devolucion : '',
+    i_denominacion: r.inspector ? r.inspector.denominacion : '',
+    i_apuesta_min: r.inspector ? r.inspector.apuestaMin : '',
+    i_apuesta_max: r.inspector ? r.inspector.apuestaMax : '',
+    i_mdc: r.inspector ? r.inspector.mdc : '',
+    i_inspector: r.inspector ? r.inspector.inspector : '',
+    i_firma: r.inspector ? r.inspector.firma || '' : '',
+    i_checks_billetes: r.inspector ? JSON.stringify(r.inspector.checksBilletes) : '',
+    i_checks_extras: r.inspector ? JSON.stringify(r.inspector.checksExtras) : '',
+    created_at: r.created_at || new Date().toISOString(),
+    updated_at: new Date().toISOString()
+  };
+}
+
+// ============================================================
+// UI — TABS / LOADING / ALERTAS
+// ============================================================
+function showTab(tab) {
+  ['lista','egreso','tecnico','inspector'].forEach(t => {
+    document.getElementById('tab-'+t).style.display = t===tab ? '' : 'none';
+  });
+  const map = {lista:'pipe-0',egreso:'pipe-1',tecnico:'pipe-2',inspector:'pipe-3'};
+  Object.values(map).forEach(id => document.getElementById(id).classList.remove('active'));
+  if(map[tab]) document.getElementById(map[tab]).classList.add('active');
+  if(tab==='lista') renderLista();
+}
+
+function showLoading(msg) {
+  document.getElementById('loading-msg').textContent = msg || 'Procesando...';
+  document.getElementById('loading-overlay').classList.add('open');
+}
+
+function hideLoading() {
+  document.getElementById('loading-overlay').classList.remove('open');
+}
+
+function showAlert(msg, type='success') {
+  const a = document.getElementById('alert-area');
+  a.innerHTML = `<div class="alert alert-${type}">${msg}</div>`;
+  setTimeout(() => { a.innerHTML = ''; }, 5000);
+}
+
+function showModal(title, sub, body) {
+  document.getElementById('modal-title').textContent = title;
+  document.getElementById('modal-sub').textContent = sub;
+  document.getElementById('modal-body').innerHTML = body;
+  document.getElementById('modal-aviso').classList.add('open');
+}
+
+function closeModal(id) { document.getElementById(id).classList.remove('open'); }
+
+function updateCounters() {
+  document.getElementById('cnt1').textContent = registros.filter(r=>r.estado==='egreso').length;
+  document.getElementById('cnt2').textContent = registros.filter(r=>r.estado==='tecnico').length;
+  document.getElementById('cnt3').textContent = registros.filter(r=>r.estado==='completo').length;
+}
+
+// ============================================================
+// CANVAS — FIRMAS
+// ============================================================
+function initCanvas(id) {
+  const canvas = document.getElementById(id);
+  if(!canvas) return;
+  const ctx = canvas.getContext('2d');
+  canvas._drawing = false; canvas._hasData = false;
+  function getPos(e) {
+    const rect = canvas.getBoundingClientRect();
+    const sx = canvas.width/rect.width, sy = canvas.height/rect.height;
+    if(e.touches) return {x:(e.touches[0].clientX-rect.left)*sx, y:(e.touches[0].clientY-rect.top)*sy};
+    return {x:(e.clientX-rect.left)*sx, y:(e.clientY-rect.top)*sy};
+  }
+  canvas.addEventListener('mousedown', e=>{ canvas._drawing=true; const p=getPos(e); ctx.beginPath(); ctx.moveTo(p.x,p.y); ctx.strokeStyle='#c8a84b'; ctx.lineWidth=2; ctx.lineCap='round'; });
+  canvas.addEventListener('mousemove', e=>{ if(!canvas._drawing) return; const p=getPos(e); ctx.lineTo(p.x,p.y); ctx.stroke(); canvas._hasData=true; });
+  canvas.addEventListener('mouseup', ()=>{ canvas._drawing=false; });
+  canvas.addEventListener('mouseleave', ()=>{ canvas._drawing=false; });
+  canvas.addEventListener('touchstart', e=>{ e.preventDefault(); canvas._drawing=true; const p=getPos(e); ctx.beginPath(); ctx.moveTo(p.x,p.y); ctx.strokeStyle='#c8a84b'; ctx.lineWidth=2; ctx.lineCap='round'; },{passive:false});
+  canvas.addEventListener('touchmove', e=>{ e.preventDefault(); if(!canvas._drawing) return; const p=getPos(e); ctx.lineTo(p.x,p.y); ctx.stroke(); canvas._hasData=true; },{passive:false});
+  canvas.addEventListener('touchend', ()=>{ canvas._drawing=false; });
+}
+
+function clearCanvas(id) {
+  const c = document.getElementById(id);
+  c.getContext('2d').clearRect(0,0,c.width,c.height);
+  c._hasData = false;
+}
+
+function getFirma(id) {
+  const c = document.getElementById(id);
+  return c._hasData ? c.toDataURL() : '';
+}
+
+// ============================================================
+// HELPERS
+// ============================================================
+function nowDT() {
+  const d = new Date();
+  d.setMinutes(d.getMinutes()-d.getTimezoneOffset());
+  return d.toISOString().slice(0,16);
+}
+
+function formatFecha(f) {
+  if(!f) return '-';
+  try { return new Date(f).toLocaleString('es-AR'); } catch(e) { return f; }
+}
+
+function formatPesos(v) {
+  if(!v) return '-';
+  return '$ ' + String(v).replace(/\B(?=(\d{3})+(?!\d))/g,'.');
+}
+
+// ============================================================
+// EGRESO
+// ============================================================
+function resetEgresoForm() {
+  ['e-maquina','e-isla','e-coinin','e-coinout','e-jackpot','e-prog1','e-prog2','e-prog3','e-prog4','e-devolucion','e-operador'].forEach(id=>{
+    const el=document.getElementById(id); if(el) el.value='';
+  });
+  document.getElementById('e-motivo').value='';
+  document.getElementById('e-fecha').value=nowDT();
+  clearCanvas('canvas-egreso');
+}
+
+async function guardarEgreso() {
+  const maquina = document.getElementById('e-maquina').value.trim();
+  const isla = document.getElementById('e-isla').value.trim();
+  const fecha = document.getElementById('e-fecha').value;
+  const motivo = document.getElementById('e-motivo').value;
+  const operador = document.getElementById('e-operador').value.trim();
+  if(!maquina||!isla||!fecha||!motivo||!operador) {
+    showAlert('⚠ Completar campos obligatorios: N° Máquina, Isla, Fecha, Motivo y Nombre del Operador.','info'); return;
+  }
+  const btn = document.getElementById('btn-guardar-egreso');
+  btn.disabled = true;
+  showLoading('Guardando egreso...');
+  const id = 'REG-' + Date.now();
+  const registro = {
+    id, estado:'egreso', created_at: new Date().toISOString(),
+    egreso:{ maquina, isla, fecha, motivo,
+      coinin:document.getElementById('e-coinin').value,
+      coinout:document.getElementById('e-coinout').value,
+      jackpot:document.getElementById('e-jackpot').value,
+      prog1:document.getElementById('e-prog1').value,
+      prog2:document.getElementById('e-prog2').value,
+      prog3:document.getElementById('e-prog3').value,
+      prog4:document.getElementById('e-prog4').value,
+      devolucion:document.getElementById('e-devolucion').value,
+      operador, firma:getFirma('canvas-egreso')
+    },
+    tecnico: null, inspector: null
+  };
+  const ok = await guardarEnSheets('save', flattenRegistro(registro));
+  hideLoading();
+  btn.disabled = false;
+  if(!ok) return;
+  registros.push(registro);
+  updateCounters();
+  resetEgresoForm();
+  showTab('lista');
+  showModal('📤 Aviso Enviado', `Máquina ${maquina} · Isla ${isla} — ${motivo}`,
+    `<div style="display:flex;flex-direction:column;gap:10px;">
+      <div class="alert alert-info">📨 Área <strong>TÉCNICOS</strong> notificada — Máquina ${maquina} fuera de servicio por: ${motivo}</div>
+      <div class="alert alert-info">📨 Área <strong>JUEGO</strong> notificada — Máquina ${maquina} (Isla ${isla}) no disponible</div>
+    </div>`);
+}
+
+// ============================================================
+// TECNICO
+// ============================================================
+function buscarParaTecnico() {
+  const q = document.getElementById('t-buscar-maq').value.trim().toLowerCase();
+  const cont = document.getElementById('tecnico-resultados');
+  document.getElementById('tecnico-form').style.display='none';
+  if(!q){ cont.innerHTML=''; return; }
+  const matches = registros.filter(r=>r.estado==='egreso'&&r.egreso.maquina.toLowerCase().includes(q));
+  if(!matches.length){ cont.innerHTML='<p style="color:var(--text-muted);font-size:13px;">Sin resultados. Solo se pueden reparar máquinas en estado Egresada.</p>'; return; }
+  cont.innerHTML = matches.map(r=>`<div class="record-card" style="margin-bottom:8px;">
+    <span class="rc-status">🔴</span>
+    <div class="rc-info"><h3>Máquina ${r.egreso.maquina} · Isla ${r.egreso.isla}</h3><p>${r.egreso.motivo} · ${formatFecha(r.egreso.fecha)}</p></div>
+    <div class="rc-actions"><button class="btn btn-sm btn-primary" onclick="seleccionarTecnico('${r.id}')">Seleccionar</button></div>
+  </div>`).join('');
+}
+
+function seleccionarTecnico(id) {
+  currentTecnicoId=id;
+  const r=registros.find(x=>x.id===id);
+  document.getElementById('t-maquina').value=r.egreso.maquina;
+  document.getElementById('t-isla').value=r.egreso.isla;
+  document.getElementById('t-fecha').value=nowDT();
+  document.getElementById('t-informe').value='';
+  document.getElementById('t-solucion').value='';
+  clearCanvas('canvas-tecnico');
+  document.getElementById('tecnico-egreso-ref').innerHTML=`Reparando: Máquina <strong>${r.egreso.maquina}</strong> · Isla <strong>${r.egreso.isla}</strong> · Motivo: <strong>${r.egreso.motivo}</strong> · Egreso: ${formatFecha(r.egreso.fecha)}`;
+  document.getElementById('tecnico-resultados').innerHTML='';
+  document.getElementById('t-buscar-maq').value='';
+  document.getElementById('tecnico-form').style.display='';
+}
+
+function cancelarTecnico() {
+  currentTecnicoId=null;
+  document.getElementById('tecnico-form').style.display='none';
+  document.getElementById('tecnico-resultados').innerHTML='';
+  document.getElementById('t-buscar-maq').value='';
+}
+
+async function guardarTecnico() {
+  if(!currentTecnicoId) return;
+  const solucion=document.getElementById('t-solucion').value.trim();
+  const tecnico=document.getElementById('t-tecnico').value.trim();
+  const fecha=document.getElementById('t-fecha').value;
+  if(!solucion||!tecnico||!fecha){ showAlert('⚠ Completar descripción, nombre del técnico y fecha.','info'); return; }
+  const btn=document.getElementById('btn-guardar-tecnico');
+  btn.disabled=true;
+  showLoading('Guardando reparación...');
+  const idx=registros.findIndex(x=>x.id===currentTecnicoId);
+  registros[idx].estado='tecnico';
+  registros[idx].tecnico={ fecha, informe:document.getElementById('t-informe').value,
+    maquina:registros[idx].egreso.maquina, isla:registros[idx].egreso.isla,
+    solucion, tecnico, firma:getFirma('canvas-tecnico') };
+  const ok=await guardarEnSheets('update', flattenRegistro(registros[idx]));
+  hideLoading(); btn.disabled=false;
+  if(!ok) return;
+  const maq=registros[idx].egreso.maquina, isla=registros[idx].egreso.isla;
+  updateCounters(); cancelarTecnico(); showTab('lista');
+  showModal('🔔 Alerta de Reparación Enviada', `Máquina ${maq} · Isla ${isla}`,
+    `<div style="display:flex;flex-direction:column;gap:10px;">
+      <div class="alert alert-success">📨 Área <strong>TÉCNICOS</strong> notificada — Máquina ${maq} reparada, pendiente de inspección</div>
+      <div class="alert alert-success">📨 Área <strong>JUEGO</strong> notificada — Máquina ${maq} lista para control del inspector</div>
+    </div>`);
+}
+
+// ============================================================
+// INSPECTOR
+// ============================================================
+function initChecklist() {
+  document.getElementById('checklist-billetes').innerHTML=billetes.map((b,i)=>`
+    <div class="check-item"><span>${b}</span>
+      <div class="check-btns">
+        <button class="check-btn" id="btn-b-${i}-ok" onclick="setCheck('b',${i},'ok')">✓ OK</button>
+        <button class="check-btn" id="btn-b-${i}-fail" onclick="setCheck('b',${i},'fail')">✗ FALLA</button>
+      </div>
+    </div>`).join('');
+  document.getElementById('checklist-extras').innerHTML=extras.map((ex,i)=>`
+    <div class="check-item"><span>${ex}</span>
+      <div class="check-btns">
+        <button class="check-btn" id="btn-x-${i}-ok" onclick="setCheck('x',${i},'ok')">✓ OK</button>
+        <button class="check-btn" id="btn-x-${i}-fail" onclick="setCheck('x',${i},'fail')">✗ FALLA</button>
+      </div>
+    </div>`).join('');
+}
+
+function setCheck(type,idx,val) {
+  const key=`${type}-${idx}`;
+  checkState[key]=val;
+  ['ok','fail'].forEach(v=>{ document.getElementById(`btn-${key}-${v}`).className='check-btn'+(v===val?' '+v:''); });
+}
+
+function buscarParaInspector() {
+  const q=document.getElementById('i-buscar-maq').value.trim().toLowerCase();
+  const cont=document.getElementById('inspector-resultados');
+  document.getElementById('inspector-form').style.display='none';
+  if(!q){ cont.innerHTML=''; return; }
+  const matches=registros.filter(r=>r.estado==='tecnico'&&r.egreso.maquina.toLowerCase().includes(q));
+  if(!matches.length){ cont.innerHTML='<p style="color:var(--text-muted);font-size:13px;">Sin resultados. Solo se pueden inspeccionar máquinas con reparación técnica completada.</p>'; return; }
+  cont.innerHTML=matches.map(r=>`<div class="record-card" style="margin-bottom:8px;">
+    <span class="rc-status">🔧</span>
+    <div class="rc-info"><h3>Máquina ${r.egreso.maquina} · Isla ${r.egreso.isla}</h3><p>${r.tecnico.solucion.substring(0,60)}... · Técnico: ${r.tecnico.tecnico}</p></div>
+    <div class="rc-actions"><button class="btn btn-sm btn-primary" onclick="seleccionarInspector('${r.id}')">Seleccionar</button></div>
+  </div>`).join('');
+}
+
+function seleccionarInspector(id) {
+  currentInspectorId=id;
+  const r=registros.find(x=>x.id===id);
+  document.getElementById('i-maquina').value=r.egreso.maquina;
+  document.getElementById('i-isla').value=r.egreso.isla;
+  document.getElementById('i-informe').value=r.tecnico.informe||'';
+  document.getElementById('i-fecha').value=nowDT();
+  ['i-coinin','i-devolucion','i-denominacion','i-apuesta-min','i-apuesta-max','i-mdc','i-inspector'].forEach(id=>{ document.getElementById(id).value=''; });
+  clearCanvas('canvas-inspector');
+  Object.keys(checkState).forEach(k=>delete checkState[k]);
+  initChecklist();
+  document.getElementById('inspector-ref').innerHTML=`Inspeccionando: Máquina <strong>${r.egreso.maquina}</strong> · Isla <strong>${r.egreso.isla}</strong> · Reparación: <em>${r.tecnico.solucion.substring(0,80)}...</em>`;
+  document.getElementById('inspector-resultados').innerHTML='';
+  document.getElementById('i-buscar-maq').value='';
+  document.getElementById('inspector-form').style.display='';
+}
+
+function cancelarInspector() {
+  currentInspectorId=null;
+  document.getElementById('inspector-form').style.display='none';
+  document.getElementById('inspector-resultados').innerHTML='';
+  document.getElementById('i-buscar-maq').value='';
+}
+
+async function guardarInspector() {
+  if(!currentInspectorId) return;
+  const inspector=document.getElementById('i-inspector').value.trim();
+  const fecha=document.getElementById('i-fecha').value;
+  if(!inspector||!fecha){ showAlert('⚠ Completar nombre del inspector y fecha.','info'); return; }
+  const btn=document.getElementById('btn-guardar-inspector');
+  btn.disabled=true;
+  showLoading('Guardando inspección y reingresando máquina...');
+  const idx=registros.findIndex(x=>x.id===currentInspectorId);
+  registros[idx].estado='completo';
+  registros[idx].inspector={
+    fecha, maquina:registros[idx].egreso.maquina, isla:registros[idx].egreso.isla,
+    informe:document.getElementById('i-informe').value,
+    coinin:document.getElementById('i-coinin').value,
+    devolucion:document.getElementById('i-devolucion').value,
+    denominacion:document.getElementById('i-denominacion').value,
+    apuestaMin:document.getElementById('i-apuesta-min').value,
+    apuestaMax:document.getElementById('i-apuesta-max').value,
+    mdc:document.getElementById('i-mdc').value,
+    inspector,
+    checksBilletes:billetes.reduce((a,b,i)=>{ a[b]=checkState[`b-${i}`]||''; return a; },{}),
+    checksExtras:extras.reduce((a,ex,i)=>{ a[ex]=checkState[`x-${i}`]||''; return a; },{}),
+    firma:getFirma('canvas-inspector')
+  };
+  const ok=await guardarEnSheets('update', flattenRegistro(registros[idx]));
+  hideLoading(); btn.disabled=false;
+  if(!ok) return;
+  updateCounters(); cancelarInspector(); showTab('lista');
+  showAlert(`✅ Máquina ${registros[idx].egreso.maquina} reingresada al servicio. Puede descargar el PDF desde la lista.`,'success');
+}
+
+// ============================================================
+// PDF
+// ============================================================
+function generarPDF(id) {
+  const r=registros.find(x=>x.id===id);
+  if(!r||r.estado!=='completo') return;
+  const {jsPDF}=window.jspdf;
+  const doc=new jsPDF({unit:'mm',format:'a4'});
+  const W=210, mg=14; let y=20;
+  function txt(t,x,yy,sz=10,st='normal',col=[40,40,40]){ doc.setFontSize(sz);doc.setFont('helvetica',st);doc.setTextColor(...col);doc.text(t,x,yy); }
+  function hLine(yy,c=[200,200,200]){ doc.setDrawColor(...c);doc.line(mg,yy,W-mg,yy); }
+  function secHead(title,yy,col=[30,30,80]){ doc.setFillColor(...col);doc.rect(mg,yy-5,W-mg*2,8,'F');doc.setFontSize(10);doc.setFont('helvetica','bold');doc.setTextColor(255,255,255);doc.text(title,mg+3,yy+0.5);return yy+8; }
+  function kv(label,value,x1,x2,yy){ doc.setFontSize(9);doc.setFont('helvetica','bold');doc.setTextColor(100,100,100);doc.text(label+':',x1,yy);doc.setFont('helvetica','normal');doc.setTextColor(30,30,30);doc.text(String(value||'-'),x2,yy); }
+  // Header
+  doc.setFillColor(26,26,46);doc.rect(0,0,W,22,'F');
+  txt('ACTA DE MANTENIMIENTO CORRECTIVO',mg,10,13,'bold',[200,168,75]);
+  txt('CASINO — GESTIÓN DE MÁQUINAS',mg,17,9,'normal',[180,180,200]);
+  txt('ID: '+r.id,W-mg-40,10,8,'normal',[180,180,200]);
+  txt('Generado: '+new Date().toLocaleString('es-AR'),W-mg-40,17,8,'normal',[180,180,200]);
+  y=30;
+  // E1
+  y=secHead('  ETAPA 1 — EGRESO DE MÁQUINA',y,[30,60,120]);y+=6;
+  kv('N° Máquina',r.egreso.maquina,mg,mg+28,y);kv('N° Isla',r.egreso.isla,90,110,y);kv('Fecha/Hora',formatFecha(r.egreso.fecha),130,152,y);y+=7;
+  kv('Motivo',r.egreso.motivo,mg,mg+28,y);kv('Operador',r.egreso.operador,100,120,y);y+=7;
+  kv('COIN IN',formatPesos(r.egreso.coinin),mg,mg+28,y);kv('COIN OUT',formatPesos(r.egreso.coinout),70,98,y);kv('Jackpot',formatPesos(r.egreso.jackpot),130,148,y);y+=7;
+  kv('Prog.1',formatPesos(r.egreso.prog1),mg,mg+22,y);kv('Prog.2',formatPesos(r.egreso.prog2),60,82,y);kv('Prog.3',formatPesos(r.egreso.prog3),110,130,y);kv('Prog.4',formatPesos(r.egreso.prog4),152,170,y);y+=7;
+  kv('% Devolución',r.egreso.devolucion||'-',mg,mg+28,y);y+=10;
+  if(r.egreso.firma){ txt('Firma del Operador:',mg,y,8,'bold',[80,80,80]);try{doc.addImage(r.egreso.firma,'PNG',mg,y+2,60,18);}catch(e){}y+=24; }
+  hLine(y,[180,180,200]);y+=8;
+  // E2
+  y=secHead('  ETAPA 2 — REPARACIÓN TÉCNICA',y,[30,90,60]);y+=6;
+  kv('N° Informe',r.tecnico.informe||'S/N',mg,mg+25,y);kv('Técnico',r.tecnico.tecnico,75,95,y);kv('Fecha/Hora',formatFecha(r.tecnico.fecha),140,160,y);y+=8;
+  txt('Solución aplicada:',mg,y,9,'bold',[80,80,80]);y+=5;
+  doc.setFontSize(9);doc.setFont('helvetica','normal');doc.setTextColor(30,30,30);
+  const lines=doc.splitTextToSize(r.tecnico.solucion,W-mg*2);
+  doc.text(lines,mg,y);y+=lines.length*5+4;
+  if(r.tecnico.firma){ txt('Firma del Técnico:',mg,y,8,'bold',[80,80,80]);try{doc.addImage(r.tecnico.firma,'PNG',mg,y+2,60,18);}catch(e){}y+=24; }
+  hLine(y,[180,180,200]);y+=8;
+  // E3
+  if(y>210){doc.addPage();y=20;}
+  y=secHead('  ETAPA 3 — INSPECCIÓN Y REINGRESO',y,[100,30,30]);y+=6;
+  kv('Inspector',r.inspector.inspector,mg,mg+22,y);kv('Fecha/Hora',formatFecha(r.inspector.fecha),90,110,y);kv('COIN IN',formatPesos(r.inspector.coinin),150,165,y);y+=7;
+  // Bloque verificación
+  doc.setFillColor(245,240,220);doc.rect(mg,y-4,W-mg*2,30,'F');
+  doc.setDrawColor(200,168,75);doc.rect(mg,y-4,W-mg*2,30,'S');
+  txt('VERIFICACIÓN DE CONFIGURACIÓN',mg+3,y+1,8,'bold',[120,90,10]);y+=7;
+  kv('% Devolución',r.inspector.devolucion||'-',mg+3,mg+28,y);kv('Denominación',r.inspector.denominacion||'-',80,103,y);y+=6;
+  kv('Apuesta Mín.',r.inspector.apuestaMin||'-',mg+3,mg+28,y);kv('Apuesta Máx.',r.inspector.apuestaMax||'-',80,103,y);kv('N° MDC',r.inspector.mdc||'-',140,155,y);y+=16;
+  // Billetes
+  txt('Control de billetes:',mg,y,9,'bold',[80,80,80]);y+=5;
+  const midX=(W-mg*2)/2+mg;let ci=0;
+  billetes.forEach(b=>{ const st=r.inspector.checksBilletes[b]; const x=ci%2===0?mg:midX;
+    const col=st==='ok'?[0,150,80]:st==='fail'?[200,40,40]:[150,150,150];
+    const label=st==='ok'?'OK':st==='fail'?'FALLA':'S/D';
+    doc.setFontSize(9);doc.setFont('helvetica','normal');doc.setTextColor(50,50,50);doc.text(b+':',x,y);
+    doc.setFont('helvetica','bold');doc.setTextColor(...col);doc.text(label,x+20,y);
+    if(ci%2===1)y+=5.5;ci++;
+  });
+  if(ci%2===1)y+=5.5;y+=4;
+  extras.forEach(ex=>{ const st=r.inspector.checksExtras[ex];
+    const col=st==='ok'?[0,150,80]:st==='fail'?[200,40,40]:[150,150,150];
+    const label=st==='ok'?'OK':st==='fail'?'FALLA':'S/D';
+    doc.setFontSize(9);doc.setFont('helvetica','normal');doc.setTextColor(50,50,50);doc.text(ex+':',mg,y);
+    doc.setFont('helvetica','bold');doc.setTextColor(...col);doc.text(label,mg+65,y);y+=5.5;
+  });
+  y+=6;
+  if(r.inspector.firma){ txt('Firma del Inspector:',mg,y,8,'bold',[80,80,80]);try{doc.addImage(r.inspector.firma,'PNG',mg,y+2,60,18);}catch(e){}y+=26; }
+  hLine(y,[200,168,75]);y+=5;
+  txt('MÁQUINA REINGRESADA AL SERVICIO — PROCESO CERRADO',mg,y,9,'bold',[26,26,46]);
+  doc.save(`Acta_Mantenimiento_Maquina_${r.egreso.maquina}_${r.egreso.isla}.pdf`);
+}
+
+// ============================================================
+// LISTA
+// ============================================================
+function renderLista() {
+  const q=(document.getElementById('search-input').value||'').toLowerCase();
+  const st=document.getElementById('filter-status').value;
+  let list=registros.filter(r=>{
+    const mq=!q||r.egreso.maquina.toLowerCase().includes(q)||r.egreso.isla.toLowerCase().includes(q);
+    const ms=!st||r.estado===st;
+    return mq&&ms;
+  }).slice().reverse();
+  const cont=document.getElementById('lista-records');
+  if(!list.length){ cont.innerHTML='<p style="color:var(--text-muted);font-size:13px;text-align:center;padding:24px;">No hay registros. Usá el botón "Actualizar" si acabás de abrir la app.</p>'; return; }
+  const icons={egreso:'🔴',tecnico:'🔧',completo:'✅'};
+  const labels={egreso:'Egresada',tecnico:'Reparada — Pend. Inspección',completo:'En Servicio'};
+  const bc={egreso:'badge-warning',tecnico:'badge-info',completo:'badge-success'};
+  cont.innerHTML=list.map(r=>{
+    let actions='';
+    if(r.estado==='egreso') actions+=`<button class="btn btn-sm" onclick="irTecnico('${r.id}')">🔧 Reparar</button>`;
+    if(r.estado==='tecnico') actions+=`<button class="btn btn-sm" onclick="irInspector('${r.id}')">🔍 Inspeccionar</button>`;
+    if(r.estado==='completo') actions+=`<button class="btn btn-sm btn-primary" onclick="generarPDF('${r.id}')">⬇ Descargar PDF</button>`;
+    return `<div class="record-card">
+      <span class="rc-status">${icons[r.estado]}</span>
+      <div class="rc-info">
+        <h3>Máquina ${r.egreso.maquina} &nbsp;·&nbsp; Isla ${r.egreso.isla} &nbsp;&nbsp;<span class="badge ${bc[r.estado]}">${labels[r.estado]}</span></h3>
+        <p>${r.egreso.motivo} · Egreso: ${formatFecha(r.egreso.fecha)} · Operador: ${r.egreso.operador}</p>
+      </div>
+      <div class="rc-actions">${actions}</div>
+    </div>`;
+  }).join('');
+}
+
+function irTecnico(id) {
+  const r=registros.find(x=>x.id===id);
+  showTab('tecnico');
+  document.getElementById('t-buscar-maq').value=r.egreso.maquina;
+  buscarParaTecnico();
+}
+
+function irInspector(id) {
+  const r=registros.find(x=>x.id===id);
+  showTab('inspector');
+  document.getElementById('i-buscar-maq').value=r.egreso.maquina;
+  buscarParaInspector();
+}
+
+// ============================================================
+// INIT
+// ============================================================
+window.addEventListener('load', () => {
+  initCanvas('canvas-egreso');
+  initCanvas('canvas-tecnico');
+  initCanvas('canvas-inspector');
+  initChecklist();
+  document.getElementById('e-fecha').value=nowDT();
+  showTab('lista');
+  cargarDatos();
+});
+</script>
+</body>
+</html>
