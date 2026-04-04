@@ -394,7 +394,7 @@ async function cargarDatos() {
 function parseRegistro(r) {
   return {
     id: r.id, estado: r.estado,
-    egreso: { maquina:r.e_maquina, isla:r.e_isla, fecha:r.e_fecha, motivo:r.e_motivo,
+    egreso: { maquina:String(r.e_maquina), isla:String(r.e_isla), fecha:r.e_fecha, motivo:r.e_motivo,
       coinin:r.e_coinin, coinout:r.e_coinout, jackpot:r.e_jackpot,
       prog1:r.e_prog1, prog2:r.e_prog2, prog3:r.e_prog3, prog4:r.e_prog4,
       devolucion:r.e_devolucion, operador:r.e_operador, firma:r.e_firma },
@@ -512,7 +512,7 @@ function buscarParaTecnico(){
   var cont=document.getElementById('tecnico-resultados');
   document.getElementById('tecnico-form').style.display='none';
   if(!q){ cont.innerHTML=''; return; }
-  var matches=registros.filter(function(r){ return r.estado==='egreso'&&r.egreso.maquina.toLowerCase().indexOf(q)>=0; });
+  var matches=registros.filter(function(r){ return r.estado==='egreso'&&String(r.egreso.maquina).toLowerCase().indexOf(q)>=0; });
   if(!matches.length){ cont.innerHTML='<p style="color:var(--text-muted);font-size:13px;">Sin resultados.</p>'; return; }
   cont.innerHTML=matches.map(function(r){
     return '<div class="record-card" style="margin-bottom:8px;"><span class="rc-status">🔴</span>'+
@@ -588,7 +588,7 @@ function buscarParaInspector(){
   var cont=document.getElementById('inspector-resultados');
   document.getElementById('inspector-form').style.display='none';
   if(!q){ cont.innerHTML=''; return; }
-  var matches=registros.filter(function(r){ return r.estado==='tecnico'&&r.egreso.maquina.toLowerCase().indexOf(q)>=0; });
+  var matches=registros.filter(function(r){ return r.estado==='tecnico'&&String(r.egreso.maquina).toLowerCase().indexOf(q)>=0; });
   if(!matches.length){ cont.innerHTML='<p style="color:var(--text-muted);font-size:13px;">Sin resultados.</p>'; return; }
   cont.innerHTML=matches.map(function(r){
     return '<div class="record-card" style="margin-bottom:8px;"><span class="rc-status">🔧</span>'+
@@ -716,7 +716,7 @@ function renderLista(){
   var q=(document.getElementById('search-input').value||'').toLowerCase();
   var st=document.getElementById('filter-status').value;
   var list=registros.filter(function(r){
-    var mq=!q||r.egreso.maquina.toLowerCase().indexOf(q)>=0||r.egreso.isla.toLowerCase().indexOf(q)>=0;
+    var mq=!q||String(r.egreso.maquina).toLowerCase().indexOf(q)>=0||String(r.egreso.isla).toLowerCase().indexOf(q)>=0;
     var ms=!st||r.estado===st;
     return mq&&ms;
   }).slice().reverse();
