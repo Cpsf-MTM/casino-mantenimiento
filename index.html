@@ -91,6 +91,13 @@
   .loading-overlay p { color: #fff; font-size: 14px; }
   .loading-spinner { width: 40px; height: 40px; border: 3px solid rgba(200,168,75,0.3); border-top-color: var(--accent); border-radius: 50%; animation: spin 0.8s linear infinite; }
   @keyframes spin { to { transform: rotate(360deg); } }
+  .stat-card { background: var(--surface2); border-radius: 8px; padding: 16px; text-align: center; border: 1px solid var(--border); }
+  .stat-card p.label { font-size: 11px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 8px; }
+  .stat-card p.value { font-size: 28px; font-weight: 600; }
+  .bar-row { background: var(--surface2); border-radius: 8px; padding: 12px 14px; border: 1px solid var(--border); margin-bottom: 8px; }
+  .bar-row .bar-label { display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px; font-size: 13px; }
+  .bar-track { background: rgba(255,255,255,0.08); border-radius: 4px; height: 6px; overflow: hidden; }
+  .bar-fill { height: 100%; border-radius: 4px; transition: width 0.5s; }
   @media (max-width: 600px) {
     .form-grid { grid-template-columns: 1fr; }
     .form-grid.cols3 { grid-template-columns: 1fr 1fr; }
@@ -110,34 +117,21 @@
 <div class="app">
   <div class="header">
     <h1>♦ Gestión de Mantenimiento Correctivo</h1>
-    <p>Sistema de control de máquinas — Casino</p>
+    <p>Sistema de control de máquinas — Casino Santa Fe</p>
   </div>
 
   <div class="pipeline">
-    <div class="pipe-step" onclick="showTab('lista')" id="pipe-0">
-      <span class="ps-icon">📋</span><span class="ps-label">Todos los registros</span>
-    </div>
-    <div class="pipe-step" onclick="showTab('egreso')" id="pipe-1">
-      <span class="ps-icon">🔴</span><span class="ps-label">Etapa 1 · Egreso</span>
-      <span class="ps-count" id="cnt1">0</span>
-    </div>
-    <div class="pipe-step" onclick="showTab('tecnico')" id="pipe-2">
-      <span class="ps-icon">🔧</span><span class="ps-label">Etapa 2 · Técnico</span>
-      <span class="ps-count" id="cnt2">0</span>
-    </div>
-    <div class="pipe-step" onclick="showTab('inspector')" id="pipe-3">
-      <span class="ps-icon">✅</span><span class="ps-label">Etapa 3 · Inspector</span>
-      <span class="ps-count" id="cnt3">0</span>
-    </div>
-    <div class="pipe-step" onclick="showTab('estadisticas')" id="pipe-4">
-      <span class="ps-icon">📊</span><span class="ps-label">Estadísticas</span>
-    </div>
+    <div class="pipe-step" id="pipe-0"><span class="ps-icon">📋</span><span class="ps-label">Registros</span></div>
+    <div class="pipe-step" id="pipe-1"><span class="ps-icon">🔴</span><span class="ps-label">Etapa 1</span><span class="ps-count" id="cnt1">0</span></div>
+    <div class="pipe-step" id="pipe-2"><span class="ps-icon">🔧</span><span class="ps-label">Etapa 2</span><span class="ps-count" id="cnt2">0</span></div>
+    <div class="pipe-step" id="pipe-3"><span class="ps-icon">✅</span><span class="ps-label">Etapa 3</span><span class="ps-count" id="cnt3">0</span></div>
+    <div class="pipe-step" id="pipe-4"><span class="ps-icon">📊</span><span class="ps-label">Estadísticas</span></div>
   </div>
 
   <div id="alert-area"></div>
 
   <!-- LISTA -->
-  <div id="tab-lista">
+  <div id="tab-lista" style="display:none;">
     <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;flex-wrap:wrap;gap:8px;">
       <div style="display:flex;gap:8px;flex-wrap:wrap;">
         <input id="search-input" type="text" placeholder="Buscar por N° máquina o isla..."
@@ -159,10 +153,7 @@
   <!-- EGRESO -->
   <div id="tab-egreso" style="display:none;">
     <div class="panel">
-      <div class="panel-header">
-        <span class="ph-icon">🔴</span>
-        <div><h2>Etapa 1 — Egreso de Máquina</h2><p class="ph-sub">Máquina fuera de servicio · Genera aviso a Técnicos y Juego</p></div>
-      </div>
+      <div class="panel-header"><span class="ph-icon">🔴</span><div><h2>Etapa 1 — Egreso de Máquina</h2><p class="ph-sub">Máquina fuera de servicio · Aviso a Técnicos y Juego</p></div></div>
       <div class="section-title">Identificación</div>
       <div class="form-grid cols3">
         <div class="field"><label>N° Máquina *</label><input type="text" id="e-maquina" placeholder="Ej: 0042"></div>
@@ -212,10 +203,7 @@
   <!-- TECNICO -->
   <div id="tab-tecnico" style="display:none;">
     <div class="panel">
-      <div class="panel-header">
-        <span class="ph-icon">🔧</span>
-        <div><h2>Etapa 2 — Registro Técnico</h2><p class="ph-sub">Ingrese el número de máquina para cargar sobre el egreso existente</p></div>
-      </div>
+      <div class="panel-header"><span class="ph-icon">🔧</span><div><h2>Etapa 2 — Registro Técnico</h2><p class="ph-sub">Ingrese el número de máquina para cargar sobre el egreso existente</p></div></div>
       <div id="tecnico-buscar">
         <div class="form-grid cols3">
           <div class="field"><label>N° Máquina</label><input type="text" id="t-buscar-maq" placeholder="Ej: 0042" oninput="buscarParaTecnico()"></div>
@@ -254,10 +242,7 @@
   <!-- INSPECTOR -->
   <div id="tab-inspector" style="display:none;">
     <div class="panel">
-      <div class="panel-header">
-        <span class="ph-icon">✅</span>
-        <div><h2>Etapa 3 — Inspección y Reingreso</h2><p class="ph-sub">Control final antes de poner la máquina en servicio</p></div>
-      </div>
+      <div class="panel-header"><span class="ph-icon">✅</span><div><h2>Etapa 3 — Inspección y Reingreso</h2><p class="ph-sub">Control final antes de poner la máquina en servicio</p></div></div>
       <div id="inspector-buscar">
         <div class="form-grid cols3">
           <div class="field"><label>N° Máquina</label><input type="text" id="i-buscar-maq" placeholder="Ej: 0042" oninput="buscarParaInspector()"></div>
@@ -311,37 +296,20 @@
   <!-- ESTADÍSTICAS -->
   <div id="tab-estadisticas" style="display:none;">
     <div class="panel">
-      <div class="panel-header">
-        <span class="ph-icon">📊</span>
-        <div><h2>Panel de Estadísticas</h2><p class="ph-sub">Máquinas con más fallas · Basado en registros históricos</p></div>
+      <div class="panel-header"><span class="ph-icon">📊</span><div><h2>Panel de Estadísticas</h2><p class="ph-sub">Máquinas con más fallas · Historial de egresos</p></div></div>
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;margin-bottom:20px;">
+        <div class="stat-card"><p class="label">Total Egresos</p><p class="value" id="stat-total" style="color:var(--accent);">0</p></div>
+        <div class="stat-card"><p class="label">Pendientes</p><p class="value" id="stat-pendientes" style="color:var(--warning);">0</p></div>
+        <div class="stat-card"><p class="label">Completados</p><p class="value" id="stat-completo" style="color:var(--success);">0</p></div>
       </div>
-
-      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;margin-bottom:20px;" id="stats-cards">
-        <div style="background:var(--surface2);border-radius:8px;padding:16px;text-align:center;border:1px solid var(--border);">
-          <p style="font-size:11px;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:8px;">Total Egresos</p>
-          <p style="font-size:28px;font-weight:600;color:var(--accent);" id="stat-total">0</p>
-        </div>
-        <div style="background:var(--surface2);border-radius:8px;padding:16px;text-align:center;border:1px solid var(--border);">
-          <p style="font-size:11px;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:8px;">En Reparación</p>
-          <p style="font-size:28px;font-weight:600;color:var(--warning);" id="stat-reparacion">0</p>
-        </div>
-        <div style="background:var(--surface2);border-radius:8px;padding:16px;text-align:center;border:1px solid var(--border);">
-          <p style="font-size:11px;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:8px;">Completados</p>
-          <p style="font-size:28px;font-weight:600;color:var(--success);" id="stat-completo">0</p>
-        </div>
-      </div>
-
       <div class="section-title">Máquinas con más fallas</div>
-      <div id="ranking-maquinas" style="display:flex;flex-direction:column;gap:8px;"></div>
-
+      <div id="ranking-maquinas"></div>
       <div class="section-title" style="margin-top:20px;">Egresos por motivo</div>
-      <div id="ranking-motivos" style="display:flex;flex-direction:column;gap:8px;"></div>
-
+      <div id="ranking-motivos"></div>
       <div class="section-title" style="margin-top:20px;">Tiempo promedio de reparación</div>
       <div id="stats-tiempo" style="background:var(--surface2);border-radius:8px;padding:16px;border:1px solid var(--border);"></div>
     </div>
   </div>
-
 </div>
 
 <div class="modal-overlay" id="modal-aviso">
@@ -356,10 +324,7 @@
 </div>
 
 <script>
-// ── CONFIG ──────────────────────────────────────────────────
 const API_URL = 'https://script.google.com/macros/s/AKfycbwE1O3jV1Hxfy39-zY45LmiZYZWkvk3mqlIyk3SskM3WAfQS3leacz4tjVOXP_QT0_W/exec';
-
-// ── STATE ────────────────────────────────────────────────────
 let registros = [];
 let currentTecnicoId = null;
 let currentInspectorId = null;
@@ -367,26 +332,59 @@ const billetes = ['$20.000','$10.000','$2.000','$1.000','$500','$200','$100'];
 const extras = ['Descuento AFT correcto','Acredita tickets correctamente'];
 const checkState = {};
 
-// ── API via fetch POST ─────────────────────────────────────
+// ── TABS ─────────────────────────────────────────────────────
+function showTab(tab) {
+  ['lista','egreso','tecnico','inspector','estadisticas'].forEach(function(t) {
+    document.getElementById('tab-'+t).style.display = t===tab ? '' : 'none';
+  });
+  ['pipe-0','pipe-1','pipe-2','pipe-3','pipe-4'].forEach(function(id) {
+    document.getElementById(id).classList.remove('active');
+  });
+  var map = {lista:'pipe-0',egreso:'pipe-1',tecnico:'pipe-2',inspector:'pipe-3',estadisticas:'pipe-4'};
+  if(map[tab]) document.getElementById(map[tab]).classList.add('active');
+  if(tab==='lista') renderLista();
+  if(tab==='estadisticas') renderEstadisticas();
+}
+
+// bind pipeline clicks after DOM ready
+function bindPipeline() {
+  document.getElementById('pipe-0').onclick = function(){ showTab('lista'); };
+  document.getElementById('pipe-1').onclick = function(){ showTab('egreso'); resetEgresoForm(); };
+  document.getElementById('pipe-2').onclick = function(){ showTab('tecnico'); };
+  document.getElementById('pipe-3').onclick = function(){ showTab('inspector'); };
+  document.getElementById('pipe-4').onclick = function(){ showTab('estadisticas'); };
+}
+
+// ── LOADING / ALERTAS / MODAL ─────────────────────────────────
+function showLoading(msg) { document.getElementById('loading-msg').textContent = msg||'Procesando...'; document.getElementById('loading-overlay').classList.add('open'); }
+function hideLoading() { document.getElementById('loading-overlay').classList.remove('open'); }
+function showAlert(msg, type) { type=type||'success'; var a=document.getElementById('alert-area'); a.innerHTML='<div class="alert alert-'+type+'">'+msg+'</div>'; setTimeout(function(){ a.innerHTML=''; },5000); }
+function showModal(title,sub,body) { document.getElementById('modal-title').textContent=title; document.getElementById('modal-sub').textContent=sub; document.getElementById('modal-body').innerHTML=body; document.getElementById('modal-aviso').classList.add('open'); }
+function closeModal(id) { document.getElementById(id).classList.remove('open'); }
+function updateCounters() {
+  document.getElementById('cnt1').textContent = registros.filter(function(r){return r.estado==='egreso';}).length;
+  document.getElementById('cnt2').textContent = registros.filter(function(r){return r.estado==='tecnico';}).length;
+  document.getElementById('cnt3').textContent = registros.filter(function(r){return r.estado==='completo';}).length;
+}
+
+// ── API ───────────────────────────────────────────────────────
 async function apiCall(params) {
-  const response = await fetch(API_URL, {
+  var response = await fetch(API_URL, {
     method: 'POST',
     body: JSON.stringify(params),
     headers: { 'Content-Type': 'text/plain;charset=utf-8' }
   });
-  if (!response.ok) throw new Error('HTTP ' + response.status);
+  if(!response.ok) throw new Error('HTTP '+response.status);
   return await response.json();
 }
 
 async function cargarDatos() {
   showLoading('Cargando registros...');
   try {
-    const result = await apiCall({ action: 'getAll' });
-    if (result.registros) {
-      registros = result.registros.map(parseRegistro);
-    }
+    var result = await apiCall({ action: 'getAll' });
+    if(result.registros) registros = result.registros.map(parseRegistro);
   } catch(e) {
-    showAlert('⚠ Error al conectar. Verificá tu conexión e intentá de nuevo.', 'danger');
+    showAlert('Error al conectar. Verificá tu conexión.','danger');
   }
   hideLoading();
   updateCounters();
@@ -396,323 +394,367 @@ async function cargarDatos() {
 function parseRegistro(r) {
   return {
     id: r.id, estado: r.estado,
-    egreso: {
-      maquina: r.e_maquina, isla: r.e_isla, fecha: r.e_fecha, motivo: r.e_motivo,
-      coinin: r.e_coinin, coinout: r.e_coinout, jackpot: r.e_jackpot,
-      prog1: r.e_prog1, prog2: r.e_prog2, prog3: r.e_prog3, prog4: r.e_prog4,
-      devolucion: r.e_devolucion, operador: r.e_operador, firma: r.e_firma
-    },
-    tecnico: r.t_fecha ? {
-      fecha: r.t_fecha, informe: r.t_informe, solucion: r.t_solucion,
-      tecnico: r.t_tecnico, firma: r.t_firma, maquina: r.e_maquina, isla: r.e_isla
-    } : null,
-    inspector: r.i_fecha ? {
-      fecha: r.i_fecha, informe: r.i_informe, coinin: r.i_coinin,
-      devolucion: r.i_devolucion, denominacion: r.i_denominacion,
-      apuestaMin: r.i_apuesta_min, apuestaMax: r.i_apuesta_max,
-      mdc: r.i_mdc, inspector: r.i_inspector, firma: r.i_firma,
-      checksBilletes: tryParse(r.i_checks_billetes, {}),
-      checksExtras: tryParse(r.i_checks_extras, {}),
-      maquina: r.e_maquina, isla: r.e_isla
-    } : null
+    egreso: { maquina:r.e_maquina, isla:r.e_isla, fecha:r.e_fecha, motivo:r.e_motivo,
+      coinin:r.e_coinin, coinout:r.e_coinout, jackpot:r.e_jackpot,
+      prog1:r.e_prog1, prog2:r.e_prog2, prog3:r.e_prog3, prog4:r.e_prog4,
+      devolucion:r.e_devolucion, operador:r.e_operador, firma:r.e_firma },
+    tecnico: r.t_fecha ? { fecha:r.t_fecha, informe:r.t_informe, solucion:r.t_solucion,
+      tecnico:r.t_tecnico, firma:r.t_firma, maquina:r.e_maquina, isla:r.e_isla } : null,
+    inspector: r.i_fecha ? { fecha:r.i_fecha, informe:r.i_informe, coinin:r.i_coinin,
+      devolucion:r.i_devolucion, denominacion:r.i_denominacion,
+      apuestaMin:r.i_apuesta_min, apuestaMax:r.i_apuesta_max,
+      mdc:r.i_mdc, inspector:r.i_inspector, firma:r.i_firma,
+      checksBilletes:tryParse(r.i_checks_billetes,{}),
+      checksExtras:tryParse(r.i_checks_extras,{}), maquina:r.e_maquina, isla:r.e_isla } : null
   };
 }
 
-function tryParse(str, fallback) {
-  try { return JSON.parse(str); } catch(e) { return fallback; }
-}
+function tryParse(str,fallback){ try{ return JSON.parse(str); }catch(e){ return fallback; } }
 
 function flattenRegistro(r) {
   return {
-    id: r.id, estado: r.estado,
-    e_maquina: r.egreso.maquina, e_isla: r.egreso.isla, e_fecha: r.egreso.fecha,
-    e_motivo: r.egreso.motivo, e_coinin: r.egreso.coinin||'', e_coinout: r.egreso.coinout||'',
-    e_jackpot: r.egreso.jackpot||'', e_prog1: r.egreso.prog1||'', e_prog2: r.egreso.prog2||'',
-    e_prog3: r.egreso.prog3||'', e_prog4: r.egreso.prog4||'',
-    e_devolucion: r.egreso.devolucion||'', e_operador: r.egreso.operador, e_firma: r.egreso.firma||'',
-    t_fecha: r.tecnico?r.tecnico.fecha:'', t_informe: r.tecnico?r.tecnico.informe:'',
-    t_solucion: r.tecnico?r.tecnico.solucion:'', t_tecnico: r.tecnico?r.tecnico.tecnico:'',
-    t_firma: r.tecnico?r.tecnico.firma||'':'',
-    i_fecha: r.inspector?r.inspector.fecha:'', i_informe: r.inspector?r.inspector.informe:'',
-    i_coinin: r.inspector?r.inspector.coinin:'', i_devolucion: r.inspector?r.inspector.devolucion:'',
-    i_denominacion: r.inspector?r.inspector.denominacion:'',
-    i_apuesta_min: r.inspector?r.inspector.apuestaMin:'', i_apuesta_max: r.inspector?r.inspector.apuestaMax:'',
-    i_mdc: r.inspector?r.inspector.mdc:'', i_inspector: r.inspector?r.inspector.inspector:'',
-    i_firma: r.inspector?r.inspector.firma||'':'',
-    i_checks_billetes: r.inspector?JSON.stringify(r.inspector.checksBilletes):'',
-    i_checks_extras: r.inspector?JSON.stringify(r.inspector.checksExtras):'',
-    created_at: r.created_at||new Date().toISOString(),
-    updated_at: new Date().toISOString()
+    id:r.id, estado:r.estado,
+    e_maquina:r.egreso.maquina, e_isla:r.egreso.isla, e_fecha:r.egreso.fecha, e_motivo:r.egreso.motivo,
+    e_coinin:r.egreso.coinin||'', e_coinout:r.egreso.coinout||'', e_jackpot:r.egreso.jackpot||'',
+    e_prog1:r.egreso.prog1||'', e_prog2:r.egreso.prog2||'', e_prog3:r.egreso.prog3||'', e_prog4:r.egreso.prog4||'',
+    e_devolucion:r.egreso.devolucion||'', e_operador:r.egreso.operador, e_firma:r.egreso.firma||'',
+    t_fecha:r.tecnico?r.tecnico.fecha:'', t_informe:r.tecnico?r.tecnico.informe:'',
+    t_solucion:r.tecnico?r.tecnico.solucion:'', t_tecnico:r.tecnico?r.tecnico.tecnico:'', t_firma:r.tecnico?r.tecnico.firma||'':'',
+    i_fecha:r.inspector?r.inspector.fecha:'', i_informe:r.inspector?r.inspector.informe:'',
+    i_coinin:r.inspector?r.inspector.coinin:'', i_devolucion:r.inspector?r.inspector.devolucion:'',
+    i_denominacion:r.inspector?r.inspector.denominacion:'', i_apuesta_min:r.inspector?r.inspector.apuestaMin:'',
+    i_apuesta_max:r.inspector?r.inspector.apuestaMax:'', i_mdc:r.inspector?r.inspector.mdc:'',
+    i_inspector:r.inspector?r.inspector.inspector:'', i_firma:r.inspector?r.inspector.firma||'':'',
+    i_checks_billetes:r.inspector?JSON.stringify(r.inspector.checksBilletes):'',
+    i_checks_extras:r.inspector?JSON.stringify(r.inspector.checksExtras):'',
+    created_at:r.created_at||new Date().toISOString(), updated_at:new Date().toISOString()
   };
 }
 
 async function guardarEnAPI(action, data) {
   try {
-    const result = await apiCall({ action, data });
-    if (result.error) throw new Error(result.error);
+    var result = await apiCall({ action:action, data:data });
+    if(result.error) throw new Error(result.error);
     return true;
   } catch(e) {
-    showAlert('⚠ Error al guardar: ' + e.message, 'danger');
+    showAlert('Error al guardar: '+e.message,'danger');
     return false;
   }
 }
 
-// ── UI ───────────────────────────────────────────────────────
-function showTab(tab) {
-  ['lista','egreso','tecnico','inspector','estadisticas'].forEach(t => {
-    document.getElementById('tab-'+t).style.display = t===tab?'':'none';
-  });
-  const map = {lista:'pipe-0',egreso:'pipe-1',tecnico:'pipe-2',inspector:'pipe-3',estadisticas:'pipe-4'};
-  Object.values(map).forEach(id => document.getElementById(id).classList.remove('active'));
-  if(map[tab]) document.getElementById(map[tab]).classList.add('active');
-  if(tab==='lista') renderLista();
-  if(tab==='estadisticas') renderEstadisticas();
-}
-
-function showLoading(msg) {
-  document.getElementById('loading-msg').textContent = msg||'Procesando...';
-  document.getElementById('loading-overlay').classList.add('open');
-}
-function hideLoading() { document.getElementById('loading-overlay').classList.remove('open'); }
-
-function showAlert(msg, type='success') {
-  const a = document.getElementById('alert-area');
-  a.innerHTML = `<div class="alert alert-${type}">${msg}</div>`;
-  setTimeout(()=>{ a.innerHTML=''; }, 5000);
-}
-
-function showModal(title, sub, body) {
-  document.getElementById('modal-title').textContent = title;
-  document.getElementById('modal-sub').textContent = sub;
-  document.getElementById('modal-body').innerHTML = body;
-  document.getElementById('modal-aviso').classList.add('open');
-}
-function closeModal(id) { document.getElementById(id).classList.remove('open'); }
-
-function updateCounters() {
-  document.getElementById('cnt1').textContent = registros.filter(r=>r.estado==='egreso').length;
-  document.getElementById('cnt2').textContent = registros.filter(r=>r.estado==='tecnico').length;
-  document.getElementById('cnt3').textContent = registros.filter(r=>r.estado==='completo').length;
-}
-
-// ── CANVAS ───────────────────────────────────────────────────
+// ── CANVAS ────────────────────────────────────────────────────
 function initCanvas(id) {
-  const canvas = document.getElementById(id);
+  var canvas = document.getElementById(id);
   if(!canvas) return;
-  const ctx = canvas.getContext('2d');
+  var ctx = canvas.getContext('2d');
   canvas._drawing = false; canvas._hasData = false;
   function getPos(e) {
-    const rect = canvas.getBoundingClientRect();
-    const sx = canvas.width/rect.width, sy = canvas.height/rect.height;
+    var rect = canvas.getBoundingClientRect();
+    var sx = canvas.width/rect.width, sy = canvas.height/rect.height;
     if(e.touches) return {x:(e.touches[0].clientX-rect.left)*sx, y:(e.touches[0].clientY-rect.top)*sy};
     return {x:(e.clientX-rect.left)*sx, y:(e.clientY-rect.top)*sy};
   }
-  canvas.addEventListener('mousedown', e=>{ canvas._drawing=true; const p=getPos(e); ctx.beginPath(); ctx.moveTo(p.x,p.y); ctx.strokeStyle='#c8a84b'; ctx.lineWidth=2; ctx.lineCap='round'; });
-  canvas.addEventListener('mousemove', e=>{ if(!canvas._drawing) return; const p=getPos(e); ctx.lineTo(p.x,p.y); ctx.stroke(); canvas._hasData=true; });
-  canvas.addEventListener('mouseup', ()=>{ canvas._drawing=false; });
-  canvas.addEventListener('mouseleave', ()=>{ canvas._drawing=false; });
-  canvas.addEventListener('touchstart', e=>{ e.preventDefault(); canvas._drawing=true; const p=getPos(e); ctx.beginPath(); ctx.moveTo(p.x,p.y); ctx.strokeStyle='#c8a84b'; ctx.lineWidth=2; ctx.lineCap='round'; },{passive:false});
-  canvas.addEventListener('touchmove', e=>{ e.preventDefault(); if(!canvas._drawing) return; const p=getPos(e); ctx.lineTo(p.x,p.y); ctx.stroke(); canvas._hasData=true; },{passive:false});
-  canvas.addEventListener('touchend', ()=>{ canvas._drawing=false; });
+  canvas.addEventListener('mousedown', function(e){ canvas._drawing=true; var p=getPos(e); ctx.beginPath(); ctx.moveTo(p.x,p.y); ctx.strokeStyle='#c8a84b'; ctx.lineWidth=2; ctx.lineCap='round'; });
+  canvas.addEventListener('mousemove', function(e){ if(!canvas._drawing) return; var p=getPos(e); ctx.lineTo(p.x,p.y); ctx.stroke(); canvas._hasData=true; });
+  canvas.addEventListener('mouseup', function(){ canvas._drawing=false; });
+  canvas.addEventListener('mouseleave', function(){ canvas._drawing=false; });
+  canvas.addEventListener('touchstart', function(e){ e.preventDefault(); canvas._drawing=true; var p=getPos(e); ctx.beginPath(); ctx.moveTo(p.x,p.y); ctx.strokeStyle='#c8a84b'; ctx.lineWidth=2; ctx.lineCap='round'; },{passive:false});
+  canvas.addEventListener('touchmove', function(e){ e.preventDefault(); if(!canvas._drawing) return; var p=getPos(e); ctx.lineTo(p.x,p.y); ctx.stroke(); canvas._hasData=true; },{passive:false});
+  canvas.addEventListener('touchend', function(){ canvas._drawing=false; });
 }
-function clearCanvas(id) { const c=document.getElementById(id); c.getContext('2d').clearRect(0,0,c.width,c.height); c._hasData=false; }
-function getFirma(id) { const c=document.getElementById(id); return c._hasData?c.toDataURL():''; }
+function clearCanvas(id){ var c=document.getElementById(id); c.getContext('2d').clearRect(0,0,c.width,c.height); c._hasData=false; }
+function getFirma(id){ var c=document.getElementById(id); return c._hasData?c.toDataURL():''; }
 
-// ── HELPERS ──────────────────────────────────────────────────
-function nowDT() { const d=new Date(); d.setMinutes(d.getMinutes()-d.getTimezoneOffset()); return d.toISOString().slice(0,16); }
-function formatFecha(f) { if(!f) return '-'; try{ return new Date(f).toLocaleString('es-AR'); }catch(e){ return f; } }
-function formatPesos(v) { if(!v) return '-'; return '$ '+String(v).replace(/\B(?=(\d{3})+(?!\d))/g,'.'); }
+// ── HELPERS ───────────────────────────────────────────────────
+function nowDT(){ var d=new Date(); d.setMinutes(d.getMinutes()-d.getTimezoneOffset()); return d.toISOString().slice(0,16); }
+function formatFecha(f){ if(!f) return '-'; try{ return new Date(f).toLocaleString('es-AR'); }catch(e){ return f; } }
+function formatPesos(v){ if(!v) return '-'; return '$ '+String(v).replace(/\B(?=(\d{3})+(?!\d))/g,'.'); }
 
-// ── EGRESO ───────────────────────────────────────────────────
-function resetEgresoForm() {
-  ['e-maquina','e-isla','e-coinin','e-coinout','e-jackpot','e-prog1','e-prog2','e-prog3','e-prog4','e-devolucion','e-operador'].forEach(id=>{ const el=document.getElementById(id); if(el) el.value=''; });
+// ── EGRESO ────────────────────────────────────────────────────
+function resetEgresoForm(){
+  ['e-maquina','e-isla','e-coinin','e-coinout','e-jackpot','e-prog1','e-prog2','e-prog3','e-prog4','e-devolucion','e-operador'].forEach(function(id){ var el=document.getElementById(id); if(el) el.value=''; });
   document.getElementById('e-motivo').value='';
   document.getElementById('e-fecha').value=nowDT();
   clearCanvas('canvas-egreso');
 }
 
-async function guardarEgreso() {
-  const maquina=document.getElementById('e-maquina').value.trim();
-  const isla=document.getElementById('e-isla').value.trim();
-  const fecha=document.getElementById('e-fecha').value;
-  const motivo=document.getElementById('e-motivo').value;
-  const operador=document.getElementById('e-operador').value.trim();
-  if(!maquina||!isla||!fecha||!motivo||!operador){ showAlert('⚠ Completar campos obligatorios.','info'); return; }
-  const btn=document.getElementById('btn-guardar-egreso');
-  btn.disabled=true; showLoading('Guardando egreso...');
-  const id='REG-'+Date.now();
-  const registro={ id, estado:'egreso', created_at:new Date().toISOString(),
-    egreso:{ maquina, isla, fecha, motivo,
+async function guardarEgreso(){
+  var maquina=document.getElementById('e-maquina').value.trim();
+  var isla=document.getElementById('e-isla').value.trim();
+  var fecha=document.getElementById('e-fecha').value;
+  var motivo=document.getElementById('e-motivo').value;
+  var operador=document.getElementById('e-operador').value.trim();
+  if(!maquina||!isla||!fecha||!motivo||!operador){ showAlert('Completar campos obligatorios: Máquina, Isla, Fecha, Motivo y Operador.','info'); return; }
+  var btn=document.getElementById('btn-guardar-egreso');
+  btn.disabled=true; showLoading('Guardando egreso y enviando mails...');
+  var id='REG-'+Date.now();
+  var registro={ id:id, estado:'egreso', created_at:new Date().toISOString(),
+    egreso:{ maquina:maquina, isla:isla, fecha:fecha, motivo:motivo,
       coinin:document.getElementById('e-coinin').value, coinout:document.getElementById('e-coinout').value,
       jackpot:document.getElementById('e-jackpot').value, prog1:document.getElementById('e-prog1').value,
       prog2:document.getElementById('e-prog2').value, prog3:document.getElementById('e-prog3').value,
       prog4:document.getElementById('e-prog4').value, devolucion:document.getElementById('e-devolucion').value,
-      operador, firma:getFirma('canvas-egreso') }, tecnico:null, inspector:null };
-  const ok=await guardarEnAPI('save', flattenRegistro(registro));
+      operador:operador, firma:getFirma('canvas-egreso') }, tecnico:null, inspector:null };
+  var ok=await guardarEnAPI('save', flattenRegistro(registro));
   hideLoading(); btn.disabled=false;
   if(!ok) return;
   registros.push(registro); updateCounters(); resetEgresoForm(); showTab('lista');
-  showModal('📤 Aviso Enviado',`Máquina ${maquina} · Isla ${isla} — ${motivo}`,
-    `<div style="display:flex;flex-direction:column;gap:10px;">
-      <div class="alert alert-info">📨 Área <strong>TÉCNICOS</strong> notificada — Máquina ${maquina} fuera de servicio por: ${motivo}</div>
-      <div class="alert alert-info">📨 Área <strong>JUEGO</strong> notificada — Máquina ${maquina} (Isla ${isla}) no disponible</div>
-    </div>`);
+  showModal('📤 Aviso Enviado','Máquina '+maquina+' · Isla '+isla+' — '+motivo,
+    '<div style="display:flex;flex-direction:column;gap:10px;">'+
+    '<div class="alert alert-info">📨 Mail enviado a <strong>TÉCNICOS</strong> — Máquina '+maquina+' fuera de servicio</div>'+
+    '<div class="alert alert-info">📨 Mail enviado a <strong>JUEGO</strong> — Máquina '+maquina+' no disponible</div>'+
+    '</div>');
 }
 
-// ── TECNICO ──────────────────────────────────────────────────
-function buscarParaTecnico() {
-  const q=document.getElementById('t-buscar-maq').value.trim().toLowerCase();
-  const cont=document.getElementById('tecnico-resultados');
+// ── TECNICO ───────────────────────────────────────────────────
+function buscarParaTecnico(){
+  var q=document.getElementById('t-buscar-maq').value.trim().toLowerCase();
+  var cont=document.getElementById('tecnico-resultados');
   document.getElementById('tecnico-form').style.display='none';
   if(!q){ cont.innerHTML=''; return; }
-  const matches=registros.filter(r=>r.estado==='egreso'&&r.egreso.maquina.toLowerCase().includes(q));
+  var matches=registros.filter(function(r){ return r.estado==='egreso'&&r.egreso.maquina.toLowerCase().indexOf(q)>=0; });
   if(!matches.length){ cont.innerHTML='<p style="color:var(--text-muted);font-size:13px;">Sin resultados.</p>'; return; }
-  cont.innerHTML=matches.map(r=>`<div class="record-card" style="margin-bottom:8px;">
-    <span class="rc-status">🔴</span>
-    <div class="rc-info"><h3>Máquina ${r.egreso.maquina} · Isla ${r.egreso.isla}</h3><p>${r.egreso.motivo} · ${formatFecha(r.egreso.fecha)}</p></div>
-    <div class="rc-actions"><button class="btn btn-sm btn-primary" onclick="seleccionarTecnico('${r.id}')">Seleccionar</button></div>
-  </div>`).join('');
+  cont.innerHTML=matches.map(function(r){
+    return '<div class="record-card" style="margin-bottom:8px;"><span class="rc-status">🔴</span>'+
+    '<div class="rc-info"><h3>Máquina '+r.egreso.maquina+' · Isla '+r.egreso.isla+'</h3>'+
+    '<p>'+r.egreso.motivo+' · '+formatFecha(r.egreso.fecha)+'</p></div>'+
+    '<div class="rc-actions"><button class="btn btn-sm btn-primary" onclick="seleccionarTecnico(\''+r.id+'\')">Seleccionar</button></div></div>';
+  }).join('');
 }
 
-function seleccionarTecnico(id) {
+function seleccionarTecnico(id){
   currentTecnicoId=id;
-  const r=registros.find(x=>x.id===id);
+  var r=registros.find(function(x){ return x.id===id; });
   document.getElementById('t-maquina').value=r.egreso.maquina;
   document.getElementById('t-isla').value=r.egreso.isla;
   document.getElementById('t-fecha').value=nowDT();
   document.getElementById('t-informe').value=''; document.getElementById('t-solucion').value='';
   clearCanvas('canvas-tecnico');
-  document.getElementById('tecnico-egreso-ref').innerHTML=`Reparando: Máquina <strong>${r.egreso.maquina}</strong> · Isla <strong>${r.egreso.isla}</strong> · Motivo: <strong>${r.egreso.motivo}</strong>`;
+  document.getElementById('tecnico-egreso-ref').innerHTML='Reparando: Máquina <strong>'+r.egreso.maquina+'</strong> · Isla <strong>'+r.egreso.isla+'</strong> · Motivo: <strong>'+r.egreso.motivo+'</strong>';
   document.getElementById('tecnico-resultados').innerHTML=''; document.getElementById('t-buscar-maq').value='';
   document.getElementById('tecnico-form').style.display='';
 }
 
-function cancelarTecnico() {
-  currentTecnicoId=null;
-  document.getElementById('tecnico-form').style.display='none';
-  document.getElementById('tecnico-resultados').innerHTML=''; document.getElementById('t-buscar-maq').value='';
-}
+function cancelarTecnico(){ currentTecnicoId=null; document.getElementById('tecnico-form').style.display='none'; document.getElementById('tecnico-resultados').innerHTML=''; document.getElementById('t-buscar-maq').value=''; }
 
-async function guardarTecnico() {
+async function guardarTecnico(){
   if(!currentTecnicoId) return;
-  const solucion=document.getElementById('t-solucion').value.trim();
-  const tecnico=document.getElementById('t-tecnico').value.trim();
-  const fecha=document.getElementById('t-fecha').value;
-  if(!solucion||!tecnico||!fecha){ showAlert('⚠ Completar todos los campos.','info'); return; }
-  const btn=document.getElementById('btn-guardar-tecnico');
-  btn.disabled=true; showLoading('Guardando reparación...');
-  const idx=registros.findIndex(x=>x.id===currentTecnicoId);
+  var solucion=document.getElementById('t-solucion').value.trim();
+  var tecnico=document.getElementById('t-tecnico').value.trim();
+  var fecha=document.getElementById('t-fecha').value;
+  if(!solucion||!tecnico||!fecha){ showAlert('Completar todos los campos.','info'); return; }
+  var btn=document.getElementById('btn-guardar-tecnico');
+  btn.disabled=true; showLoading('Guardando reparación y enviando mails...');
+  var idx=registros.findIndex(function(x){ return x.id===currentTecnicoId; });
   registros[idx].estado='tecnico';
-  registros[idx].tecnico={ fecha, informe:document.getElementById('t-informe').value,
+  registros[idx].tecnico={ fecha:fecha, informe:document.getElementById('t-informe').value,
     maquina:registros[idx].egreso.maquina, isla:registros[idx].egreso.isla,
-    solucion, tecnico, firma:getFirma('canvas-tecnico') };
-  const ok=await guardarEnAPI('update', flattenRegistro(registros[idx]));
+    solucion:solucion, tecnico:tecnico, firma:getFirma('canvas-tecnico') };
+  var ok=await guardarEnAPI('update', flattenRegistro(registros[idx]));
   hideLoading(); btn.disabled=false;
   if(!ok) return;
-  const maq=registros[idx].egreso.maquina, isla=registros[idx].egreso.isla;
+  var maq=registros[idx].egreso.maquina, isla=registros[idx].egreso.isla;
   updateCounters(); cancelarTecnico(); showTab('lista');
-  showModal('🔔 Alerta Enviada',`Máquina ${maq} · Isla ${isla}`,
-    `<div style="display:flex;flex-direction:column;gap:10px;">
-      <div class="alert alert-success">📨 Área <strong>TÉCNICOS</strong> — Máquina ${maq} reparada, pendiente de inspección</div>
-      <div class="alert alert-success">📨 Área <strong>JUEGO</strong> — Máquina ${maq} lista para control del inspector</div>
-    </div>`);
+  showModal('🔔 Alerta Enviada','Máquina '+maq+' · Isla '+isla,
+    '<div style="display:flex;flex-direction:column;gap:10px;">'+
+    '<div class="alert alert-success">📨 Mail enviado a <strong>TÉCNICOS</strong> — Máquina '+maq+' reparada, pendiente de inspección</div>'+
+    '<div class="alert alert-success">📨 Mail enviado a <strong>JUEGO</strong> — Máquina '+maq+' lista para inspector</div>'+
+    '</div>');
 }
 
-// ── INSPECTOR ────────────────────────────────────────────────
-function initChecklist() {
-  document.getElementById('checklist-billetes').innerHTML=billetes.map((b,i)=>`
-    <div class="check-item"><span>${b}</span><div class="check-btns">
-      <button class="check-btn" id="btn-b-${i}-ok" onclick="setCheck('b',${i},'ok')">✓ OK</button>
-      <button class="check-btn" id="btn-b-${i}-fail" onclick="setCheck('b',${i},'fail')">✗ FALLA</button>
-    </div></div>`).join('');
-  document.getElementById('checklist-extras').innerHTML=extras.map((ex,i)=>`
-    <div class="check-item"><span>${ex}</span><div class="check-btns">
-      <button class="check-btn" id="btn-x-${i}-ok" onclick="setCheck('x',${i},'ok')">✓ OK</button>
-      <button class="check-btn" id="btn-x-${i}-fail" onclick="setCheck('x',${i},'fail')">✗ FALLA</button>
-    </div></div>`).join('');
+// ── INSPECTOR ─────────────────────────────────────────────────
+function initChecklist(){
+  document.getElementById('checklist-billetes').innerHTML=billetes.map(function(b,i){
+    return '<div class="check-item"><span>'+b+'</span><div class="check-btns">'+
+    '<button class="check-btn" id="btn-b-'+i+'-ok" onclick="setCheck(\'b\','+i+',\'ok\')">✓ OK</button>'+
+    '<button class="check-btn" id="btn-b-'+i+'-fail" onclick="setCheck(\'b\','+i+',\'fail\')">✗ FALLA</button>'+
+    '</div></div>';
+  }).join('');
+  document.getElementById('checklist-extras').innerHTML=extras.map(function(ex,i){
+    return '<div class="check-item"><span>'+ex+'</span><div class="check-btns">'+
+    '<button class="check-btn" id="btn-x-'+i+'-ok" onclick="setCheck(\'x\','+i+',\'ok\')">✓ OK</button>'+
+    '<button class="check-btn" id="btn-x-'+i+'-fail" onclick="setCheck(\'x\','+i+',\'fail\')">✗ FALLA</button>'+
+    '</div></div>';
+  }).join('');
 }
 
-function setCheck(type,idx,val) {
-  const key=`${type}-${idx}`; checkState[key]=val;
-  ['ok','fail'].forEach(v=>{ document.getElementById(`btn-${key}-${v}`).className='check-btn'+(v===val?' '+v:''); });
+function setCheck(type,idx,val){
+  var key=type+'-'+idx; checkState[key]=val;
+  ['ok','fail'].forEach(function(v){ document.getElementById('btn-'+key+'-'+v).className='check-btn'+(v===val?' '+v:''); });
 }
 
-function buscarParaInspector() {
-  const q=document.getElementById('i-buscar-maq').value.trim().toLowerCase();
-  const cont=document.getElementById('inspector-resultados');
+function buscarParaInspector(){
+  var q=document.getElementById('i-buscar-maq').value.trim().toLowerCase();
+  var cont=document.getElementById('inspector-resultados');
   document.getElementById('inspector-form').style.display='none';
   if(!q){ cont.innerHTML=''; return; }
-  const matches=registros.filter(r=>r.estado==='tecnico'&&r.egreso.maquina.toLowerCase().includes(q));
+  var matches=registros.filter(function(r){ return r.estado==='tecnico'&&r.egreso.maquina.toLowerCase().indexOf(q)>=0; });
   if(!matches.length){ cont.innerHTML='<p style="color:var(--text-muted);font-size:13px;">Sin resultados.</p>'; return; }
-  cont.innerHTML=matches.map(r=>`<div class="record-card" style="margin-bottom:8px;">
-    <span class="rc-status">🔧</span>
-    <div class="rc-info"><h3>Máquina ${r.egreso.maquina} · Isla ${r.egreso.isla}</h3><p>${r.tecnico.solucion.substring(0,60)}... · Técnico: ${r.tecnico.tecnico}</p></div>
-    <div class="rc-actions"><button class="btn btn-sm btn-primary" onclick="seleccionarInspector('${r.id}')">Seleccionar</button></div>
-  </div>`).join('');
+  cont.innerHTML=matches.map(function(r){
+    return '<div class="record-card" style="margin-bottom:8px;"><span class="rc-status">🔧</span>'+
+    '<div class="rc-info"><h3>Máquina '+r.egreso.maquina+' · Isla '+r.egreso.isla+'</h3>'+
+    '<p>'+r.tecnico.solucion.substring(0,60)+'... · Técnico: '+r.tecnico.tecnico+'</p></div>'+
+    '<div class="rc-actions"><button class="btn btn-sm btn-primary" onclick="seleccionarInspector(\''+r.id+'\')">Seleccionar</button></div></div>';
+  }).join('');
 }
 
-function seleccionarInspector(id) {
+function seleccionarInspector(id){
   currentInspectorId=id;
-  const r=registros.find(x=>x.id===id);
+  var r=registros.find(function(x){ return x.id===id; });
   document.getElementById('i-maquina').value=r.egreso.maquina;
   document.getElementById('i-isla').value=r.egreso.isla;
   document.getElementById('i-informe').value=r.tecnico.informe||'';
   document.getElementById('i-fecha').value=nowDT();
-  ['i-coinin','i-devolucion','i-denominacion','i-apuesta-min','i-apuesta-max','i-mdc','i-inspector'].forEach(id=>{ document.getElementById(id).value=''; });
+  ['i-coinin','i-devolucion','i-denominacion','i-apuesta-min','i-apuesta-max','i-mdc','i-inspector'].forEach(function(id){ document.getElementById(id).value=''; });
   clearCanvas('canvas-inspector');
-  Object.keys(checkState).forEach(k=>delete checkState[k]);
+  Object.keys(checkState).forEach(function(k){ delete checkState[k]; });
   initChecklist();
-  document.getElementById('inspector-ref').innerHTML=`Inspeccionando: Máquina <strong>${r.egreso.maquina}</strong> · Isla <strong>${r.egreso.isla}</strong>`;
+  document.getElementById('inspector-ref').innerHTML='Inspeccionando: Máquina <strong>'+r.egreso.maquina+'</strong> · Isla <strong>'+r.egreso.isla+'</strong>';
   document.getElementById('inspector-resultados').innerHTML=''; document.getElementById('i-buscar-maq').value='';
   document.getElementById('inspector-form').style.display='';
 }
 
-function cancelarInspector() {
-  currentInspectorId=null;
-  document.getElementById('inspector-form').style.display='none';
-  document.getElementById('inspector-resultados').innerHTML=''; document.getElementById('i-buscar-maq').value='';
-}
+function cancelarInspector(){ currentInspectorId=null; document.getElementById('inspector-form').style.display='none'; document.getElementById('inspector-resultados').innerHTML=''; document.getElementById('i-buscar-maq').value=''; }
 
-async function guardarInspector() {
+async function guardarInspector(){
   if(!currentInspectorId) return;
-  const inspector=document.getElementById('i-inspector').value.trim();
-  const fecha=document.getElementById('i-fecha').value;
-  if(!inspector||!fecha){ showAlert('⚠ Completar nombre del inspector y fecha.','info'); return; }
-  const btn=document.getElementById('btn-guardar-inspector');
-  btn.disabled=true; showLoading('Guardando inspección...');
-  const idx=registros.findIndex(x=>x.id===currentInspectorId);
+  var inspector=document.getElementById('i-inspector').value.trim();
+  var fecha=document.getElementById('i-fecha').value;
+  if(!inspector||!fecha){ showAlert('Completar nombre del inspector y fecha.','info'); return; }
+  var btn=document.getElementById('btn-guardar-inspector');
+  btn.disabled=true; showLoading('Guardando inspección y enviando mails...');
+  var idx=registros.findIndex(function(x){ return x.id===currentInspectorId; });
   registros[idx].estado='completo';
   registros[idx].inspector={
-    fecha, maquina:registros[idx].egreso.maquina, isla:registros[idx].egreso.isla,
+    fecha:fecha, maquina:registros[idx].egreso.maquina, isla:registros[idx].egreso.isla,
     informe:document.getElementById('i-informe').value, coinin:document.getElementById('i-coinin').value,
     devolucion:document.getElementById('i-devolucion').value, denominacion:document.getElementById('i-denominacion').value,
     apuestaMin:document.getElementById('i-apuesta-min').value, apuestaMax:document.getElementById('i-apuesta-max').value,
-    mdc:document.getElementById('i-mdc').value, inspector,
-    checksBilletes:billetes.reduce((a,b,i)=>{ a[b]=checkState[`b-${i}`]||''; return a; },{}),
-    checksExtras:extras.reduce((a,ex,i)=>{ a[ex]=checkState[`x-${i}`]||''; return a; },{}),
+    mdc:document.getElementById('i-mdc').value, inspector:inspector,
+    checksBilletes:billetes.reduce(function(a,b,i){ a[b]=checkState['b-'+i]||''; return a; },{}),
+    checksExtras:extras.reduce(function(a,ex,i){ a[ex]=checkState['x-'+i]||''; return a; },{}),
     firma:getFirma('canvas-inspector')
   };
-  const ok=await guardarEnAPI('update', flattenRegistro(registros[idx]));
+  var ok=await guardarEnAPI('update', flattenRegistro(registros[idx]));
   hideLoading(); btn.disabled=false;
   if(!ok) return;
   updateCounters(); cancelarInspector(); showTab('lista');
-  showAlert(`✅ Máquina ${registros[idx].egreso.maquina} reingresada al servicio.`,'success');
+  showAlert('✅ Máquina '+registros[idx].egreso.maquina+' reingresada al servicio.','success');
 }
 
-// ── PDF ──────────────────────────────────────────────────────
-function generarPDF(id) {
-  const r=registros.find(x=>x.id===id);
+// ── ESTADÍSTICAS ──────────────────────────────────────────────
+function renderEstadisticas(){
+  var total=registros.length;
+  var pend=registros.filter(function(r){ return r.estado==='egreso'||r.estado==='tecnico'; }).length;
+  var comp=registros.filter(function(r){ return r.estado==='completo'; }).length;
+  document.getElementById('stat-total').textContent=total;
+  document.getElementById('stat-pendientes').textContent=pend;
+  document.getElementById('stat-completo').textContent=comp;
+
+  // Ranking máquinas
+  var contMaq={};
+  registros.forEach(function(r){ var k='Máq. '+r.egreso.maquina+' · Isla '+r.egreso.isla; contMaq[k]=(contMaq[k]||0)+1; });
+  var rankMaq=Object.entries(contMaq).sort(function(a,b){ return b[1]-a[1]; }).slice(0,10);
+  var maxMaq=rankMaq.length?rankMaq[0][1]:1;
+  var colors=['var(--danger)','var(--warning)','var(--accent)','var(--info)'];
+  var contRanking=document.getElementById('ranking-maquinas');
+  if(!rankMaq.length){ contRanking.innerHTML='<p style="color:var(--text-muted);font-size:13px;">Sin datos aún.</p>'; }
+  else {
+    contRanking.innerHTML=rankMaq.map(function(entry,i){
+      var nombre=entry[0], cant=entry[1];
+      var pct=Math.round((cant/maxMaq)*100);
+      var color=colors[Math.min(i,colors.length-1)];
+      var medal=i===0?'🥇 ':i===1?'🥈 ':i===2?'🥉 ':'';
+      return '<div class="bar-row"><div class="bar-label"><span style="font-weight:600;">'+medal+nombre+'</span>'+
+        '<span style="font-weight:700;color:'+color+';">'+cant+' egreso'+(cant>1?'s':'')+'</span></div>'+
+        '<div class="bar-track"><div class="bar-fill" style="width:'+pct+'%;background:'+color+';"></div></div></div>';
+    }).join('');
+  }
+
+  // Ranking motivos
+  var contMotivo={};
+  registros.forEach(function(r){ contMotivo[r.egreso.motivo]=(contMotivo[r.egreso.motivo]||0)+1; });
+  var rankMotivo=Object.entries(contMotivo).sort(function(a,b){ return b[1]-a[1]; });
+  var maxMot=rankMotivo.length?rankMotivo[0][1]:1;
+  var contMotivos=document.getElementById('ranking-motivos');
+  if(!rankMotivo.length){ contMotivos.innerHTML='<p style="color:var(--text-muted);font-size:13px;">Sin datos aún.</p>'; }
+  else {
+    contMotivos.innerHTML=rankMotivo.map(function(entry){
+      var motivo=entry[0], cant=entry[1];
+      var pct=Math.round((cant/maxMot)*100);
+      return '<div class="bar-row"><div class="bar-label"><span>'+motivo+'</span>'+
+        '<span style="font-weight:700;color:var(--info);">'+cant+'</span></div>'+
+        '<div class="bar-track"><div class="bar-fill" style="width:'+pct+'%;background:var(--info);"></div></div></div>';
+    }).join('');
+  }
+
+  // Tiempo promedio
+  var tiempos=registros.filter(function(r){ return r.tecnico&&r.egreso.fecha&&r.tecnico.fecha; }).map(function(r){
+    var ini=new Date(r.egreso.fecha), fin=new Date(r.tecnico.fecha);
+    return (fin-ini)/(1000*60*60);
+  }).filter(function(h){ return h>0&&h<720; });
+  var contTiempo=document.getElementById('stats-tiempo');
+  if(!tiempos.length){ contTiempo.innerHTML='<p style="color:var(--text-muted);font-size:13px;">Sin datos suficientes aún.</p>'; }
+  else {
+    var prom=tiempos.reduce(function(a,b){ return a+b; },0)/tiempos.length;
+    var min=Math.min.apply(null,tiempos);
+    var max=Math.max.apply(null,tiempos);
+    function fmtH(h){ return h<1?Math.round(h*60)+' min':h.toFixed(1)+' hs'; }
+    contTiempo.innerHTML='<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;text-align:center;">'+
+      '<div><p style="font-size:11px;color:var(--text-muted);text-transform:uppercase;margin-bottom:6px;">Promedio</p>'+
+      '<p style="font-size:22px;font-weight:600;color:var(--accent);">'+fmtH(prom)+'</p></div>'+
+      '<div><p style="font-size:11px;color:var(--text-muted);text-transform:uppercase;margin-bottom:6px;">Más rápido</p>'+
+      '<p style="font-size:22px;font-weight:600;color:var(--success);">'+fmtH(min)+'</p></div>'+
+      '<div><p style="font-size:11px;color:var(--text-muted);text-transform:uppercase;margin-bottom:6px;">Más lento</p>'+
+      '<p style="font-size:22px;font-weight:600;color:var(--danger);">'+fmtH(max)+'</p></div></div>'+
+      '<p style="font-size:11px;color:var(--text-muted);text-align:center;margin-top:10px;">Basado en '+tiempos.length+' reparación'+(tiempos.length>1?'es':'')+'</p>';
+  }
+}
+
+// ── LISTA ─────────────────────────────────────────────────────
+function renderLista(){
+  var q=(document.getElementById('search-input').value||'').toLowerCase();
+  var st=document.getElementById('filter-status').value;
+  var list=registros.filter(function(r){
+    var mq=!q||r.egreso.maquina.toLowerCase().indexOf(q)>=0||r.egreso.isla.toLowerCase().indexOf(q)>=0;
+    var ms=!st||r.estado===st;
+    return mq&&ms;
+  }).slice().reverse();
+  var cont=document.getElementById('lista-records');
+  if(!list.length){ cont.innerHTML='<p style="color:var(--text-muted);font-size:13px;text-align:center;padding:24px;">No hay registros. Presioná 🔄 Actualizar.</p>'; return; }
+  var icons={egreso:'🔴',tecnico:'🔧',completo:'✅'};
+  var labels={egreso:'Egresada',tecnico:'Reparada — Pend. Inspección',completo:'En Servicio'};
+  var bc={egreso:'badge-warning',tecnico:'badge-info',completo:'badge-success'};
+  cont.innerHTML=list.map(function(r){
+    var actions='';
+    if(r.estado==='egreso') actions+='<button class="btn btn-sm" onclick="irTecnico(\''+r.id+'\')">🔧 Reparar</button>';
+    if(r.estado==='tecnico') actions+='<button class="btn btn-sm" onclick="irInspector(\''+r.id+'\')">🔍 Inspeccionar</button>';
+    if(r.estado==='completo') actions+='<button class="btn btn-sm btn-primary" onclick="generarPDF(\''+r.id+'\')">⬇ PDF</button>';
+    return '<div class="record-card"><span class="rc-status">'+icons[r.estado]+'</span>'+
+      '<div class="rc-info"><h3>Máquina '+r.egreso.maquina+' &nbsp;·&nbsp; Isla '+r.egreso.isla+
+      ' &nbsp;&nbsp;<span class="badge '+bc[r.estado]+'">'+labels[r.estado]+'</span></h3>'+
+      '<p>'+r.egreso.motivo+' · Egreso: '+formatFecha(r.egreso.fecha)+' · Operador: '+r.egreso.operador+'</p></div>'+
+      '<div class="rc-actions">'+actions+'</div></div>';
+  }).join('');
+}
+
+function irTecnico(id){ var r=registros.find(function(x){ return x.id===id; }); showTab('tecnico'); document.getElementById('t-buscar-maq').value=r.egreso.maquina; buscarParaTecnico(); }
+function irInspector(id){ var r=registros.find(function(x){ return x.id===id; }); showTab('inspector'); document.getElementById('i-buscar-maq').value=r.egreso.maquina; buscarParaInspector(); }
+
+// ── PDF ───────────────────────────────────────────────────────
+function generarPDF(id){
+  var r=registros.find(function(x){ return x.id===id; });
   if(!r||r.estado!=='completo') return;
-  const {jsPDF}=window.jspdf;
-  const doc=new jsPDF({unit:'mm',format:'a4'});
-  const W=210, mg=14; let y=20;
-  function txt(t,x,yy,sz=10,st='normal',col=[40,40,40]){ doc.setFontSize(sz);doc.setFont('helvetica',st);doc.setTextColor(...col);doc.text(t,x,yy); }
-  function hLine(yy,c=[200,200,200]){ doc.setDrawColor(...c);doc.line(mg,yy,W-mg,yy); }
-  function secHead(title,yy,col=[30,30,80]){ doc.setFillColor(...col);doc.rect(mg,yy-5,W-mg*2,8,'F');doc.setFontSize(10);doc.setFont('helvetica','bold');doc.setTextColor(255,255,255);doc.text(title,mg+3,yy+0.5);return yy+8; }
+  var jsPDF=window.jspdf.jsPDF;
+  var doc=new jsPDF({unit:'mm',format:'a4'});
+  var W=210, mg=14, y=20;
+  function txt(t,x,yy,sz,st,col){ sz=sz||10;st=st||'normal';col=col||[40,40,40]; doc.setFontSize(sz);doc.setFont('helvetica',st);doc.setTextColor(col[0],col[1],col[2]);doc.text(t,x,yy); }
+  function hLine(yy,c){ c=c||[200,200,200]; doc.setDrawColor(c[0],c[1],c[2]);doc.line(mg,yy,W-mg,yy); }
+  function secHead(title,yy,col){ col=col||[30,30,80]; doc.setFillColor(col[0],col[1],col[2]);doc.rect(mg,yy-5,W-mg*2,8,'F');doc.setFontSize(10);doc.setFont('helvetica','bold');doc.setTextColor(255,255,255);doc.text(title,mg+3,yy+0.5);return yy+8; }
   function kv(label,value,x1,x2,yy){ doc.setFontSize(9);doc.setFont('helvetica','bold');doc.setTextColor(100,100,100);doc.text(label+':',x1,yy);doc.setFont('helvetica','normal');doc.setTextColor(30,30,30);doc.text(String(value||'-'),x2,yy); }
   doc.setFillColor(26,26,46);doc.rect(0,0,W,22,'F');
   txt('ACTA DE MANTENIMIENTO CORRECTIVO',mg,10,13,'bold',[200,168,75]);
-  txt('CASINO — GESTIÓN DE MÁQUINAS',mg,17,9,'normal',[180,180,200]);
+  txt('CASINO SANTA FE — GESTIÓN DE MÁQUINAS',mg,17,9,'normal',[180,180,200]);
   txt('ID: '+r.id,W-mg-40,10,8,'normal',[180,180,200]);
   txt('Generado: '+new Date().toLocaleString('es-AR'),W-mg-40,17,8,'normal',[180,180,200]);
   y=30;
@@ -722,15 +764,15 @@ function generarPDF(id) {
   kv('COIN IN',formatPesos(r.egreso.coinin),mg,mg+28,y);kv('COIN OUT',formatPesos(r.egreso.coinout),70,98,y);kv('Jackpot',formatPesos(r.egreso.jackpot),130,148,y);y+=7;
   kv('Prog.1',formatPesos(r.egreso.prog1),mg,mg+22,y);kv('Prog.2',formatPesos(r.egreso.prog2),60,82,y);kv('Prog.3',formatPesos(r.egreso.prog3),110,130,y);kv('Prog.4',formatPesos(r.egreso.prog4),152,170,y);y+=7;
   kv('% Devolución',r.egreso.devolucion||'-',mg,mg+28,y);y+=10;
-  if(r.egreso.firma){txt('Firma del Operador:',mg,y,8,'bold',[80,80,80]);try{doc.addImage(r.egreso.firma,'PNG',mg,y+2,60,18);}catch(e){}y+=24;}
+  if(r.egreso.firma){txt('Firma Operador:',mg,y,8,'bold',[80,80,80]);try{doc.addImage(r.egreso.firma,'PNG',mg,y+2,60,18);}catch(e){}y+=24;}
   hLine(y,[180,180,200]);y+=8;
   y=secHead('  ETAPA 2 — REPARACIÓN TÉCNICA',y,[30,90,60]);y+=6;
   kv('N° Informe',r.tecnico.informe||'S/N',mg,mg+25,y);kv('Técnico',r.tecnico.tecnico,75,95,y);kv('Fecha/Hora',formatFecha(r.tecnico.fecha),140,160,y);y+=8;
   txt('Solución aplicada:',mg,y,9,'bold',[80,80,80]);y+=5;
   doc.setFontSize(9);doc.setFont('helvetica','normal');doc.setTextColor(30,30,30);
-  const lines=doc.splitTextToSize(r.tecnico.solucion,W-mg*2);
+  var lines=doc.splitTextToSize(r.tecnico.solucion,W-mg*2);
   doc.text(lines,mg,y);y+=lines.length*5+4;
-  if(r.tecnico.firma){txt('Firma del Técnico:',mg,y,8,'bold',[80,80,80]);try{doc.addImage(r.tecnico.firma,'PNG',mg,y+2,60,18);}catch(e){}y+=24;}
+  if(r.tecnico.firma){txt('Firma Técnico:',mg,y,8,'bold',[80,80,80]);try{doc.addImage(r.tecnico.firma,'PNG',mg,y+2,60,18);}catch(e){}y+=24;}
   hLine(y,[180,180,200]);y+=8;
   if(y>210){doc.addPage();y=20;}
   y=secHead('  ETAPA 3 — INSPECCIÓN Y REINGRESO',y,[100,30,30]);y+=6;
@@ -741,163 +783,31 @@ function generarPDF(id) {
   kv('% Devolución',r.inspector.devolucion||'-',mg+3,mg+28,y);kv('Denominación',r.inspector.denominacion||'-',80,103,y);y+=6;
   kv('Apuesta Mín.',r.inspector.apuestaMin||'-',mg+3,mg+28,y);kv('Apuesta Máx.',r.inspector.apuestaMax||'-',80,103,y);kv('N° MDC',r.inspector.mdc||'-',140,155,y);y+=16;
   txt('Control de billetes:',mg,y,9,'bold',[80,80,80]);y+=5;
-  const midX=(W-mg*2)/2+mg;let ci=0;
-  billetes.forEach(b=>{ const st=r.inspector.checksBilletes[b];const x=ci%2===0?mg:midX;
-    const col=st==='ok'?[0,150,80]:st==='fail'?[200,40,40]:[150,150,150];
-    const label=st==='ok'?'OK':st==='fail'?'FALLA':'S/D';
+  var midX=(W-mg*2)/2+mg; var ci=0;
+  billetes.forEach(function(b){ var st=r.inspector.checksBilletes[b]; var x=ci%2===0?mg:midX;
+    var col=st==='ok'?[0,150,80]:st==='fail'?[200,40,40]:[150,150,150];
+    var label=st==='ok'?'OK':st==='fail'?'FALLA':'S/D';
     doc.setFontSize(9);doc.setFont('helvetica','normal');doc.setTextColor(50,50,50);doc.text(b+':',x,y);
-    doc.setFont('helvetica','bold');doc.setTextColor(...col);doc.text(label,x+20,y);
+    doc.setFont('helvetica','bold');doc.setTextColor(col[0],col[1],col[2]);doc.text(label,x+20,y);
     if(ci%2===1)y+=5.5;ci++;
   });
   if(ci%2===1)y+=5.5;y+=4;
-  extras.forEach(ex=>{ const st=r.inspector.checksExtras[ex];
-    const col=st==='ok'?[0,150,80]:st==='fail'?[200,40,40]:[150,150,150];
-    const label=st==='ok'?'OK':st==='fail'?'FALLA':'S/D';
+  extras.forEach(function(ex){ var st=r.inspector.checksExtras[ex];
+    var col=st==='ok'?[0,150,80]:st==='fail'?[200,40,40]:[150,150,150];
+    var label=st==='ok'?'OK':st==='fail'?'FALLA':'S/D';
     doc.setFontSize(9);doc.setFont('helvetica','normal');doc.setTextColor(50,50,50);doc.text(ex+':',mg,y);
-    doc.setFont('helvetica','bold');doc.setTextColor(...col);doc.text(label,mg+65,y);y+=5.5;
+    doc.setFont('helvetica','bold');doc.setTextColor(col[0],col[1],col[2]);doc.text(label,mg+65,y);y+=5.5;
   });
   y+=6;
-  if(r.inspector.firma){txt('Firma del Inspector:',mg,y,8,'bold',[80,80,80]);try{doc.addImage(r.inspector.firma,'PNG',mg,y+2,60,18);}catch(e){}y+=26;}
+  if(r.inspector.firma){txt('Firma Inspector:',mg,y,8,'bold',[80,80,80]);try{doc.addImage(r.inspector.firma,'PNG',mg,y+2,60,18);}catch(e){}y+=26;}
   hLine(y,[200,168,75]);y+=5;
   txt('MÁQUINA REINGRESADA AL SERVICIO — PROCESO CERRADO',mg,y,9,'bold',[26,26,46]);
-  doc.save(`Acta_Mantenimiento_Maquina_${r.egreso.maquina}_${r.egreso.isla}.pdf`);
+  doc.save('Acta_Mantenimiento_Maquina_'+r.egreso.maquina+'_'+r.egreso.isla+'.pdf');
 }
 
-// ── LISTA ────────────────────────────────────────────────────
-function renderLista() {
-  const q=(document.getElementById('search-input').value||'').toLowerCase();
-  const st=document.getElementById('filter-status').value;
-  let list=registros.filter(r=>{
-    const mq=!q||r.egreso.maquina.toLowerCase().includes(q)||r.egreso.isla.toLowerCase().includes(q);
-    const ms=!st||r.estado===st;
-    return mq&&ms;
-  }).slice().reverse();
-  const cont=document.getElementById('lista-records');
-  if(!list.length){ cont.innerHTML='<p style="color:var(--text-muted);font-size:13px;text-align:center;padding:24px;">No hay registros. Presioná 🔄 Actualizar para cargar los datos.</p>'; return; }
-  const icons={egreso:'🔴',tecnico:'🔧',completo:'✅'};
-  const labels={egreso:'Egresada',tecnico:'Reparada — Pend. Inspección',completo:'En Servicio'};
-  const bc={egreso:'badge-warning',tecnico:'badge-info',completo:'badge-success'};
-  cont.innerHTML=list.map(r=>{
-    let actions='';
-    if(r.estado==='egreso') actions+=`<button class="btn btn-sm" onclick="irTecnico('${r.id}')">🔧 Reparar</button>`;
-    if(r.estado==='tecnico') actions+=`<button class="btn btn-sm" onclick="irInspector('${r.id}')">🔍 Inspeccionar</button>`;
-    if(r.estado==='completo') actions+=`<button class="btn btn-sm btn-primary" onclick="generarPDF('${r.id}')">⬇ Descargar PDF</button>`;
-    return `<div class="record-card">
-      <span class="rc-status">${icons[r.estado]}</span>
-      <div class="rc-info">
-        <h3>Máquina ${r.egreso.maquina} &nbsp;·&nbsp; Isla ${r.egreso.isla} &nbsp;&nbsp;<span class="badge ${bc[r.estado]}">${labels[r.estado]}</span></h3>
-        <p>${r.egreso.motivo} · Egreso: ${formatFecha(r.egreso.fecha)} · Operador: ${r.egreso.operador}</p>
-      </div>
-      <div class="rc-actions">${actions}</div>
-    </div>`;
-  }).join('');
-}
-
-function irTecnico(id) { const r=registros.find(x=>x.id===id); showTab('tecnico'); document.getElementById('t-buscar-maq').value=r.egreso.maquina; buscarParaTecnico(); }
-function irInspector(id) { const r=registros.find(x=>x.id===id); showTab('inspector'); document.getElementById('i-buscar-maq').value=r.egreso.maquina; buscarParaInspector(); }
-
-// ── ESTADÍSTICAS ─────────────────────────────────────────────
-function renderEstadisticas() {
-  const total = registros.length;
-  const enRep = registros.filter(r=>r.estado==='egreso'||r.estado==='tecnico').length;
-  const comp  = registros.filter(r=>r.estado==='completo').length;
-  document.getElementById('stat-total').textContent = total;
-  document.getElementById('stat-reparacion').textContent = enRep;
-  document.getElementById('stat-completo').textContent = comp;
-
-  // Ranking máquinas con más fallas
-  const contMaq = {};
-  registros.forEach(r => {
-    const k = 'Máq. ' + r.egreso.maquina + ' · Isla ' + r.egreso.isla;
-    contMaq[k] = (contMaq[k]||0) + 1;
-  });
-  const rankMaq = Object.entries(contMaq).sort((a,b)=>b[1]-a[1]).slice(0,10);
-  const maxMaq = rankMaq.length ? rankMaq[0][1] : 1;
-  const contRanking = document.getElementById('ranking-maquinas');
-  if(!rankMaq.length) {
-    contRanking.innerHTML = '<p style="color:var(--text-muted);font-size:13px;">Sin datos aún.</p>';
-  } else {
-    contRanking.innerHTML = rankMaq.map(([nombre, cant], i) => {
-      const pct = Math.round((cant/maxMaq)*100);
-      const color = i===0 ? 'var(--danger)' : i===1 ? 'var(--warning)' : i===2 ? 'var(--accent)' : 'var(--info)';
-      return \`<div style="background:var(--surface2);border-radius:8px;padding:12px 14px;border:1px solid var(--border);">
-        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">
-          <span style="font-size:13px;font-weight:600;">\${i===0?'🥇':i===1?'🥈':i===2?'🥉':'  '} \${nombre}</span>
-          <span style="font-size:13px;font-weight:700;color:\${color};">\${cant} egreso\${cant>1?'s':''}</span>
-        </div>
-        <div style="background:rgba(255,255,255,0.08);border-radius:4px;height:6px;overflow:hidden;">
-          <div style="width:\${pct}%;height:100%;background:\${color};border-radius:4px;transition:width 0.5s;"></div>
-        </div>
-      </div>\`;
-    }).join('');
-  }
-
-  // Ranking por motivo
-  const contMotivo = {};
-  registros.forEach(r => { contMotivo[r.egreso.motivo] = (contMotivo[r.egreso.motivo]||0)+1; });
-  const rankMotivo = Object.entries(contMotivo).sort((a,b)=>b[1]-a[1]);
-  const maxMot = rankMotivo.length ? rankMotivo[0][1] : 1;
-  const contMotivos = document.getElementById('ranking-motivos');
-  if(!rankMotivo.length) {
-    contMotivos.innerHTML = '<p style="color:var(--text-muted);font-size:13px;">Sin datos aún.</p>';
-  } else {
-    contMotivos.innerHTML = rankMotivo.map(([motivo, cant]) => {
-      const pct = Math.round((cant/maxMot)*100);
-      return \`<div style="background:var(--surface2);border-radius:8px;padding:12px 14px;border:1px solid var(--border);">
-        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">
-          <span style="font-size:13px;">\${motivo}</span>
-          <span style="font-size:13px;font-weight:700;color:var(--info);">\${cant}</span>
-        </div>
-        <div style="background:rgba(255,255,255,0.08);border-radius:4px;height:6px;overflow:hidden;">
-          <div style="width:\${pct}%;height:100%;background:var(--info);border-radius:4px;"></div>
-        </div>
-      </div>\`;
-    }).join('');
-  }
-
-  // Tiempo promedio de reparación
-  const tiempos = registros
-    .filter(r=>r.tecnico&&r.egreso.fecha&&r.tecnico.fecha)
-    .map(r=>{
-      const ini = new Date(r.egreso.fecha);
-      const fin = new Date(r.tecnico.fecha);
-      return (fin-ini)/(1000*60*60);
-    })
-    .filter(h=>h>0&&h<720);
-
-  const contTiempo = document.getElementById('stats-tiempo');
-  if(!tiempos.length) {
-    contTiempo.innerHTML = '<p style="color:var(--text-muted);font-size:13px;">Sin datos suficientes aún. Se calcula cuando hay registros con etapa 2 completa.</p>';
-  } else {
-    const prom = tiempos.reduce((a,b)=>a+b,0)/tiempos.length;
-    const min  = Math.min(...tiempos);
-    const max  = Math.max(...tiempos);
-    function fmtH(h) {
-      if(h<1) return Math.round(h*60)+' min';
-      return h.toFixed(1)+' hs';
-    }
-    contTiempo.innerHTML = \`
-      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;text-align:center;">
-        <div>
-          <p style="font-size:11px;color:var(--text-muted);text-transform:uppercase;margin-bottom:6px;">Promedio</p>
-          <p style="font-size:22px;font-weight:600;color:var(--accent);">\${fmtH(prom)}</p>
-        </div>
-        <div>
-          <p style="font-size:11px;color:var(--text-muted);text-transform:uppercase;margin-bottom:6px;">Más rápido</p>
-          <p style="font-size:22px;font-weight:600;color:var(--success);">\${fmtH(min)}</p>
-        </div>
-        <div>
-          <p style="font-size:11px;color:var(--text-muted);text-transform:uppercase;margin-bottom:6px;">Más lento</p>
-          <p style="font-size:22px;font-weight:600;color:var(--danger);">\${fmtH(max)}</p>
-        </div>
-      </div>
-      <p style="font-size:11px;color:var(--text-muted);text-align:center;margin-top:10px;">Basado en \${tiempos.length} reparación\${tiempos.length>1?'es':''} completada\${tiempos.length>1?'s':''}</p>
-    \`;
-  }
-}
-
-// ── INIT ─────────────────────────────────────────────────────
-window.addEventListener('load', () => {
+// ── INIT ──────────────────────────────────────────────────────
+window.addEventListener('load', function(){
+  bindPipeline();
   initCanvas('canvas-egreso');
   initCanvas('canvas-tecnico');
   initCanvas('canvas-inspector');
