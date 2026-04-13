@@ -186,6 +186,25 @@
       <div class="form-grid cols1" style="margin-top:12px;">
         <div class="field"><label>% de Devolución</label><input type="text" id="e-devolucion" placeholder="Ej: 94,5%"></div>
       </div>
+      <div class="section-title" style="margin-top:14px;">Foto de la Máquina</div>
+      <div class="field" style="margin-bottom:10px;">
+        <label>Foto (opcional)</label>
+        <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:8px;">
+          <label class="btn btn-sm" style="cursor:pointer;">
+            📷 Tomar foto
+            <input type="file" id="e-foto-camara" accept="image/*" capture="environment" style="display:none;" onchange="previewFoto('e-foto-camara','e-foto-preview')">
+          </label>
+          <label class="btn btn-sm" style="cursor:pointer;">
+            🖼 Subir imagen
+            <input type="file" id="e-foto-archivo" accept="image/*" style="display:none;" onchange="previewFoto('e-foto-archivo','e-foto-preview')">
+          </label>
+          <button class="btn btn-sm" onclick="clearFoto('e-foto-preview','e-foto-camara','e-foto-archivo')">✕ Quitar</button>
+        </div>
+        <div id="e-foto-preview" style="display:none;">
+          <img id="e-foto-img" style="max-width:100%;max-height:200px;border-radius:8px;border:1px solid var(--border);">
+        </div>
+      </div>
+      <input type="hidden" id="e-foto-data">
       <div class="section-title" style="margin-top:14px;">Firma del Operador</div>
       <div class="field" style="margin-bottom:10px;"><label>Nombre del Operador *</label><input type="text" id="e-operador" placeholder="Nombre completo"></div>
       <div class="firma-wrap">
@@ -470,12 +489,39 @@ function nowDT(){ var d=new Date(); d.setMinutes(d.getMinutes()-d.getTimezoneOff
 function formatFecha(f){ if(!f) return '-'; try{ return new Date(f).toLocaleString('es-AR'); }catch(e){ return f; } }
 function formatPesos(v){ if(!v) return '-'; return '$ '+String(v).replace(/\B(?=(\d{3})+(?!\d))/g,'.'); }
 
+// ── FOTO ─────────────────────────────────────────────────────
+function previewFoto(inputId, previewId) {
+  var input = document.getElementById(inputId);
+  if(!input.files||!input.files[0]) return;
+  var reader = new FileReader();
+  reader.onload = function(e) {
+    document.getElementById('e-foto-img').src = e.target.result;
+    document.getElementById(previewId).style.display = '';
+    document.getElementById('e-foto-data').value = e.target.result;
+  };
+  reader.readAsDataURL(input.files[0]);
+}
+
+function clearFoto(previewId, id1, id2) {
+  document.getElementById(previewId).style.display = 'none';
+  document.getElementById('e-foto-img').src = '';
+  document.getElementById('e-foto-data').value = '';
+  document.getElementById(id1).value = '';
+  document.getElementById(id2).value = '';
+}
+
+function getFotoData() {
+  var el = document.getElementById('e-foto-data');
+  return el ? el.value : '';
+}
+
 // ── EGRESO ────────────────────────────────────────────────────
 function resetEgresoForm(){
   ['e-maquina','e-isla','e-coinin','e-coinout','e-jackpot','e-prog1','e-prog2','e-prog3','e-prog4','e-devolucion','e-operador'].forEach(function(id){ var el=document.getElementById(id); if(el) el.value=''; });
   document.getElementById('e-motivo').value='';
   document.getElementById('e-fecha').value=nowDT();
   clearCanvas('canvas-egreso');
+  clearFoto('e-foto-preview','e-foto-camara','e-foto-archivo');
 }
 
 async function guardarEgreso(){
@@ -494,7 +540,7 @@ async function guardarEgreso(){
       jackpot:document.getElementById('e-jackpot').value, prog1:document.getElementById('e-prog1').value,
       prog2:document.getElementById('e-prog2').value, prog3:document.getElementById('e-prog3').value,
       prog4:document.getElementById('e-prog4').value, devolucion:document.getElementById('e-devolucion').value,
-      operador:operador, firma:getFirma('canvas-egreso') }, tecnico:null, inspector:null };
+      operador:operador, firma:getFirma('canvas-egreso'), foto:getFotoData() }, tecnico:null, inspector:null };
   var ok=await guardarEnAPI('save', flattenRegistro(registro));
   hideLoading(); btn.disabled=false;
   if(!ok) return;
@@ -765,6 +811,15 @@ function generarPDF(id){
   kv('Prog.1',formatPesos(r.egreso.prog1),mg,mg+22,y);kv('Prog.2',formatPesos(r.egreso.prog2),60,82,y);kv('Prog.3',formatPesos(r.egreso.prog3),110,130,y);kv('Prog.4',formatPesos(r.egreso.prog4),152,170,y);y+=7;
   kv('% Devolución',r.egreso.devolucion||'-',mg,mg+28,y);y+=10;
   if(r.egreso.firma){txt('Firma Operador:',mg,y,8,'bold',[80,80,80]);try{doc.addImage(r.egreso.firma,'PNG',mg,y+2,60,18);}catch(e){}y+=24;}
+  if(r.egreso.foto){
+    if(y>200){doc.addPage();y=20;}
+    txt('Foto de la maquina:',mg,y,8,'bold',[80,80,80]);y+=4;
+    try{
+      var fotoW=80, fotoH=60;
+      doc.addImage(r.egreso.foto,'JPEG',mg,y,fotoW,fotoH);
+      y+=fotoH+6;
+    }catch(e){}
+  }
   hLine(y,[180,180,200]);y+=8;
   y=secHead('  ETAPA 2 — REPARACIÓN TÉCNICA',y,[30,90,60]);y+=6;
   kv('N° Informe',r.tecnico.informe||'S/N',mg,mg+25,y);kv('Técnico',r.tecnico.tecnico,75,95,y);kv('Fecha/Hora',formatFecha(r.tecnico.fecha),140,160,y);y+=8;
