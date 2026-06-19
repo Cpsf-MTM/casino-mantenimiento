@@ -126,7 +126,6 @@
     <div class="pipe-step" id="pipe-2"><span class="ps-icon">🔧</span><span class="ps-label">Etapa 2</span><span class="ps-count" id="cnt2">0</span></div>
     <div class="pipe-step" id="pipe-3"><span class="ps-icon">✅</span><span class="ps-label">Etapa 3</span><span class="ps-count" id="cnt3">0</span></div>
     <div class="pipe-step" id="pipe-4"><span class="ps-icon">📊</span><span class="ps-label">Estadísticas</span></div>
-    <div class="pipe-step" id="pipe-5"><span class="ps-icon">📋</span><span class="ps-label">Reporte diario</span></div>
   </div>
 
   <div id="alert-area"></div>
@@ -146,10 +145,7 @@
         </select>
         <button class="btn btn-sm" onclick="cargarDatos()">🔄 Actualizar</button>
       </div>
-      <div style="display:flex;gap:8px;flex-wrap:wrap;">
-        <button class="btn btn-primary" onclick="showTab('egreso');resetEgresoForm()">+ Nueva Máquina Fuera de Servicio</button>
-        <button class="btn" onclick="showTab('reporte')">📋 Reporte Diario</button>
-      </div>
+      <button class="btn btn-primary" onclick="showTab('egreso');resetEgresoForm()">+ Nueva Máquina Fuera de Servicio</button>
     </div>
     <div id="lista-records" class="records"></div>
   </div>
@@ -171,7 +167,7 @@
           <option value="">— Seleccionar —</option>
           <option>Borrado total</option><option>Borrado parcial</option><option>Clear</option>
           <option>Cambio de layout</option><option>Cambio de juego</option><option>Cambio de denominación</option>
-          <option>Cambio de MDC</option><option>Falla técnica</option><option>Mantenimiento preventivo</option><option>Baja transitoria</option><option>Cambio de MDC</option>
+          <option>Falla técnica</option><option>Mantenimiento preventivo</option><option>Baja transitoria</option>
         </select>
       </div>
       <div class="section-title" style="margin-top:14px;">Contadores</div>
@@ -335,38 +331,6 @@
   </div>
 </div>
 
-  <!-- REPORTE DIARIO -->
-  <div id="tab-reporte" style="display:none;">
-    <div class="panel">
-      <div class="panel-header">
-        <span class="ph-icon">📋</span>
-        <div><h2>Reporte Diario — Fuera de Servicio</h2><p class="ph-sub">Listado de máquinas sin reingresar y tiempo transcurrido</p></div>
-      </div>
-      <div style="display:flex;gap:10px;margin-bottom:16px;flex-wrap:wrap;">
-        <button class="btn btn-sm" onclick="cargarDatos();setTimeout(renderReporte,1500)">🔄 Actualizar</button>
-        <button class="btn btn-primary btn-sm" onclick="enviarReportePorMail()">📧 Enviar reporte por mail</button>
-        <button class="btn btn-sm" onclick="copiarReporte()">📋 Copiar texto</button>
-      </div>
-      <div id="reporte-contenido"></div>
-    </div>
-  
-  <!-- REPORTE DIARIO -->
-  <div id="tab-reporte" style="display:none;">
-    <div class="panel">
-      <div class="panel-header">
-        <span class="ph-icon">📋</span>
-        <div><h2>Reporte Diario — Máquinas Fuera de Servicio</h2><p class="ph-sub">Listado para enviar al cierre del turno</p></div>
-      </div>
-      <div id="reporte-contenido"></div>
-      <hr class="divider">
-      <div style="display:flex;gap:10px;justify-content:flex-end;flex-wrap:wrap;">
-        <button class="btn" onclick="showTab('lista')">Volver</button>
-        <button class="btn btn-primary" onclick="enviarReporteDiario()">📨 Enviar Reporte por Mail</button>
-      </div>
-    </div>
-  </div>
-</div>
-
 <div class="modal-overlay" id="modal-aviso">
   <div class="modal">
     <h2 id="modal-title"></h2>
@@ -374,18 +338,6 @@
     <div id="modal-body"></div>
     <div style="display:flex;gap:10px;justify-content:flex-end;margin-top:16px;">
       <button class="btn btn-primary" onclick="closeModal('modal-aviso')">Cerrar</button>
-    </div>
-  </div>
-</div>
-
-<div class="modal-overlay" id="modal-reporte">
-  <div class="modal">
-    <h2>📋 Reporte de Máquinas Fuera de Servicio</h2>
-    <p class="modal-sub" id="reporte-sub"></p>
-    <textarea id="reporte-texto" readonly style="width:100%;min-height:260px;background:var(--surface2);border:1px solid rgba(255,255,255,0.1);border-radius:6px;color:var(--text);padding:12px;font-size:13px;font-family:'Courier New',monospace;line-height:1.6;resize:vertical;"></textarea>
-    <div style="display:flex;gap:10px;justify-content:flex-end;margin-top:16px;">
-      <button class="btn" onclick="closeModal('modal-reporte')">Cerrar</button>
-      <button class="btn btn-primary" id="btn-copiar-reporte" onclick="copiarReporte()">📋 Copiar texto</button>
     </div>
   </div>
 </div>
@@ -401,18 +353,16 @@ const checkState = {};
 
 // ── TABS ─────────────────────────────────────────────────────
 function showTab(tab) {
-  ['lista','egreso','tecnico','inspector','estadisticas','reporte'].forEach(function(t) {
+  ['lista','egreso','tecnico','inspector','estadisticas'].forEach(function(t) {
     document.getElementById('tab-'+t).style.display = t===tab ? '' : 'none';
   });
-  ['pipe-0','pipe-1','pipe-2','pipe-3','pipe-4','pipe-5'].forEach(function(id) {
+  ['pipe-0','pipe-1','pipe-2','pipe-3','pipe-4'].forEach(function(id) {
     document.getElementById(id).classList.remove('active');
   });
-  var map = {lista:'pipe-0',egreso:'pipe-1',tecnico:'pipe-2',inspector:'pipe-3',estadisticas:'pipe-4',reporte:'pipe-5'};
+  var map = {lista:'pipe-0',egreso:'pipe-1',tecnico:'pipe-2',inspector:'pipe-3',estadisticas:'pipe-4'};
   if(map[tab]) document.getElementById(map[tab]).classList.add('active');
   if(tab==='lista') renderLista();
   if(tab==='estadisticas') renderEstadisticas();
-  if(tab==='reporte') renderReporte();
-  if(tab==='reporte') renderReporte();
 }
 
 // bind pipeline clicks after DOM ready
@@ -422,7 +372,6 @@ function bindPipeline() {
   document.getElementById('pipe-2').onclick = function(){ showTab('tecnico'); };
   document.getElementById('pipe-3').onclick = function(){ showTab('inspector'); };
   document.getElementById('pipe-4').onclick = function(){ showTab('estadisticas'); };
-  document.getElementById('pipe-5').onclick = function(){ showTab('reporte'); };
 }
 
 // ── LOADING / ALERTAS / MODAL ─────────────────────────────────
@@ -808,65 +757,6 @@ function renderEstadisticas(){
   }
 }
 
-// ── REPORTE FIN DE DÍA ───────────────────────────────────────
-function calcularTiempoFuera(fechaEgreso) {
-  if(!fechaEgreso) return '-';
-  var ini = new Date(fechaEgreso);
-  var ahora = new Date();
-  var diffMs = ahora - ini;
-  if(diffMs < 0) return '-';
-  var horas = Math.floor(diffMs/(1000*60*60));
-  var dias = Math.floor(horas/24);
-  var horasRestantes = horas%24;
-  if(dias>0) return dias+'d '+horasRestantes+'h';
-  var mins = Math.floor((diffMs%(1000*60*60))/(1000*60));
-  if(horas>0) return horas+'h '+mins+'m';
-  return mins+'m';
-}
-
-function generarReporteFueraServicio() {
-  var fuera = registros.filter(function(r){ return r.estado==='egreso'||r.estado==='tecnico'; });
-  fuera.sort(function(a,b){ return new Date(a.egreso.fecha) - new Date(b.egreso.fecha); });
-
-  var ahora = new Date();
-  var fechaStr = ahora.toLocaleDateString('es-AR') + ' ' + ahora.toLocaleTimeString('es-AR', {hour:'2-digit',minute:'2-digit'});
-
-  var texto = 'REPORTE MAQUINAS FUERA DE SERVICIO\n';
-  texto += 'Casino Santa Fe - ' + fechaStr + '\n';
-  texto += '=====================================\n\n';
-
-  if(!fuera.length) {
-    texto += 'No hay maquinas fuera de servicio.\n';
-  } else {
-    fuera.forEach(function(r){
-      var tiempo = calcularTiempoFuera(r.egreso.fecha);
-      texto += 'MTM ' + r.egreso.maquina + ' — ' + tiempo + ' fuera de servicio\n';
-    });
-    texto += '\nTotal: ' + fuera.length + ' maquina' + (fuera.length>1?'s':'') + ' fuera de servicio.';
-  }
-
-  document.getElementById('reporte-texto').value = texto;
-  document.getElementById('reporte-sub').textContent = fuera.length + ' máquina' + (fuera.length!==1?'s':'') + ' fuera de servicio · ' + fechaStr;
-  document.getElementById('modal-reporte').classList.add('open');
-}
-
-function copiarReporte() {
-  var textarea = document.getElementById('reporte-texto');
-  textarea.select();
-  textarea.setSelectionRange(0, 999999);
-  var btn = document.getElementById('btn-copiar-reporte');
-  try {
-    navigator.clipboard.writeText(textarea.value).then(function(){
-      btn.textContent = '✓ Copiado';
-      setTimeout(function(){ btn.textContent = '📋 Copiar texto'; }, 2000);
-    });
-  } catch(e) {
-    document.execCommand('copy');
-    btn.textContent = '✓ Copiado';
-    setTimeout(function(){ btn.textContent = '📋 Copiar texto'; }, 2000);
-  }
-}
-
 // ── LISTA ─────────────────────────────────────────────────────
 function renderLista(){
   var q=(document.getElementById('search-input').value||'').toLowerCase();
@@ -968,197 +858,6 @@ function generarPDF(id){
   hLine(y,[200,168,75]);y+=5;
   txt('MÁQUINA REINGRESADA AL SERVICIO — PROCESO CERRADO',mg,y,9,'bold',[26,26,46]);
   doc.save('Acta_Mantenimiento_Maquina_'+r.egreso.maquina+'_'+r.egreso.isla+'.pdf');
-}
-
-// ── REPORTE DIARIO ───────────────────────────────────────────
-function tiempoTranscurrido(fechaStr) {
-  if(!fechaStr) return '-';
-  var ini = new Date(fechaStr);
-  var ahora = new Date();
-  var diff = ahora - ini;
-  if(isNaN(diff)) return '-';
-  var mins = Math.floor(diff/60000);
-  var hs = Math.floor(mins/60);
-  var dias = Math.floor(hs/24);
-  if(dias > 0) return dias + ' día' + (dias>1?'s':'') + ' ' + (hs%24) + 'hs';
-  if(hs > 0) return hs + 'hs ' + (mins%60) + 'min';
-  return mins + ' min';
-}
-
-function renderReporte() {
-  var fuera = registros.filter(function(r){ return r.estado==='egreso' || r.estado==='tecnico'; });
-  var cont = document.getElementById('reporte-contenido');
-  if(!fuera.length) {
-    cont.innerHTML = '<div class="alert alert-success" style="text-align:center;">✅ No hay máquinas fuera de servicio en este momento.</div>';
-    return;
-  }
-  var fecha = new Date().toLocaleString('es-AR');
-  var html = '<div style="background:var(--surface2);border-radius:8px;padding:14px;border:1px solid var(--border);margin-bottom:12px;">';
-  html += '<p style="font-size:12px;color:var(--text-muted);">Generado: '+fecha+' · Total fuera de servicio: <strong style="color:var(--danger);">'+fuera.length+'</strong></p>';
-  html += '</div>';
-  html += '<div style="display:flex;flex-direction:column;gap:8px;">';
-  fuera.forEach(function(r) {
-    var estado = r.estado==='egreso' ? '<span class="badge badge-warning">Esperando técnico</span>' : '<span class="badge badge-info">En reparación</span>';
-    var tiempo = tiempoTranscurrido(r.egreso.fecha);
-    html += '<div class="record-card">' +
-      '<span class="rc-status">'+(r.estado==='egreso'?'🔴':'🔧')+'</span>' +
-      '<div class="rc-info">' +
-        '<h3>Máquina '+r.egreso.maquina+' &nbsp;·&nbsp; Isla '+r.egreso.isla+'&nbsp;&nbsp;'+estado+'</h3>' +
-        '<p>'+r.egreso.motivo+' · Fuera de servicio hace: <strong style="color:var(--warning);">'+tiempo+'</strong></p>' +
-      '</div></div>';
-  });
-  html += '</div>';
-  cont.innerHTML = html;
-}
-
-function generarTextoReporte() {
-  var fuera = registros.filter(function(r){ return r.estado==='egreso' || r.estado==='tecnico'; });
-  var fecha = new Date().toLocaleString('es-AR');
-  var txt = 'REPORTE DIARIO - MAQUINAS FUERA DE SERVICIO
-';
-  txt += 'Casino Santa Fe - ' + fecha + '
-';
-  txt += '---------------------------------
-';
-  if(!fuera.length) {
-    txt += 'No hay maquinas fuera de servicio.
-';
-  } else {
-    txt += 'Total fuera de servicio: ' + fuera.length + '
-
-';
-    fuera.forEach(function(r, i) {
-      var estado = r.estado==='egreso' ? 'Esperando tecnico' : 'En reparacion';
-      txt += (i+1) + '. Maquina ' + r.egreso.maquina + ' - Isla ' + r.egreso.isla + '
-';
-      txt += '   Motivo: ' + r.egreso.motivo + '
-';
-      txt += '   Estado: ' + estado + '
-';
-      txt += '   Tiempo fuera: ' + tiempoTranscurrido(r.egreso.fecha) + '
-
-';
-    });
-  }
-  txt += '---------------------------------
-';
-  txt += 'Sistema de Mantenimiento Correctivo - Casino Santa Fe';
-  return txt;
-}
-
-function copiarReporte() {
-  var txt = generarTextoReporte();
-  navigator.clipboard.writeText(txt).then(function() {
-    showAlert('Reporte copiado al portapapeles.','success');
-  });
-}
-
-async function enviarReportePorMail() {
-  var fuera = registros.filter(function(r){ return r.estado==='egreso' || r.estado==='tecnico'; });
-  var btn = document.querySelector('[onclick="enviarReportePorMail()"]');
-  btn.disabled = true;
-  showLoading('Enviando reporte por mail...');
-  var cuerpo = generarTextoReporte();
-  var asunto = 'REPORTE DIARIO - ' + fuera.length + ' maquina' + (fuera.length!==1?'s':'') + ' fuera de servicio';
-  try {
-    var result = await apiCall({ action: 'reporte', asunto: asunto, cuerpo: cuerpo });
-    hideLoading(); btn.disabled = false;
-    if(result.ok) showAlert('Reporte enviado correctamente a todas las áreas.','success');
-    else showAlert('Error al enviar: ' + (result.error||''),'danger');
-  } catch(e) {
-    hideLoading(); btn.disabled = false;
-    showAlert('Error al enviar el reporte.','danger');
-  }
-}
-
-// ── REPORTE DIARIO ────────────────────────────────────────────
-function tiempoTranscurrido(fechaStr) {
-  if(!fechaStr) return '-';
-  var ini = new Date(fechaStr);
-  var ahora = new Date();
-  var diff = ahora - ini;
-  var mins = Math.floor(diff/60000);
-  var hs = Math.floor(mins/60);
-  var dias = Math.floor(hs/24);
-  if(dias > 0) return dias + ' día' + (dias>1?'s':'') + ' ' + (hs%24) + 'hs';
-  if(hs > 0) return hs + 'hs ' + (mins%60) + 'min';
-  return mins + ' min';
-}
-
-function renderReporte() {
-  var fuera = registros.filter(function(r){ return r.estado==='egreso' || r.estado==='tecnico'; });
-  fuera.sort(function(a,b){ return new Date(a.egreso.fecha) - new Date(b.egreso.fecha); });
-  var cont = document.getElementById('reporte-contenido');
-  if(!fuera.length) {
-    cont.innerHTML = '<div class="alert alert-success" style="margin-top:8px;">✅ No hay máquinas fuera de servicio en este momento.</div>';
-    return;
-  }
-  var html = '<p style="font-size:13px;color:var(--text-muted);margin-bottom:12px;">'+fuera.length+' máquina'+(fuera.length>1?'s':'')+' fuera de servicio al '+new Date().toLocaleString("es-AR")+'</p>';
-  html += '<div style="display:flex;flex-direction:column;gap:8px;">';
-  fuera.forEach(function(r) {
-    var estado = r.estado==='egreso' ? '<span class="badge badge-warning">Esperando técnico</span>' : '<span class="badge badge-info">En reparación</span>';
-    var tiempo = tiempoTranscurrido(r.egreso.fecha);
-    html += '<div class="record-card">'+
-      '<span class="rc-status">'+(r.estado==='egreso'?'🔴':'🔧')+'</span>'+
-      '<div class="rc-info">'+
-        '<h3>Máquina '+r.egreso.maquina+' &nbsp;·&nbsp; Isla '+r.egreso.isla+'&nbsp;&nbsp;'+estado+'</h3>'+
-        '<p>Motivo: '+r.egreso.motivo+' &nbsp;·&nbsp; Fuera de servicio hace: <strong>'+tiempo+'</strong> &nbsp;·&nbsp; Desde: '+formatFecha(r.egreso.fecha)+'</p>'+
-      '</div>'+
-    '</div>';
-  });
-  html += '</div>';
-  cont.innerHTML = html;
-}
-
-function enviarReporteDiario() {
-  var fuera = registros.filter(function(r){ return r.estado==='egreso' || r.estado==='tecnico'; });
-  fuera.sort(function(a,b){ return new Date(a.egreso.fecha) - new Date(b.egreso.fecha); });
-  var fecha = new Date().toLocaleString('es-AR');
-  var cuerpo = 'REPORTE DIARIO - MAQUINAS FUERA DE SERVICIO
-';
-  cuerpo += 'Casino Santa Fe - ' + fecha + '
-';
-  cuerpo += '---------------------------------
-
-';
-  if(!fuera.length) {
-    cuerpo += 'No hay maquinas fuera de servicio en este momento.
-';
-  } else {
-    cuerpo += 'Total fuera de servicio: ' + fuera.length + '
-
-';
-    fuera.forEach(function(r, i) {
-      cuerpo += (i+1) + '. Maquina ' + r.egreso.maquina + ' - Isla ' + r.egreso.isla + '
-';
-      cuerpo += '   Motivo   : ' + r.egreso.motivo + '
-';
-      cuerpo += '   Estado   : ' + (r.estado==='egreso'?'Esperando tecnico':'En reparacion') + '
-';
-      cuerpo += '   Desde    : ' + formatFecha(r.egreso.fecha) + '
-';
-      cuerpo += '   Transcurrido: ' + tiempoTranscurrido(r.egreso.fecha) + '
-
-';
-    });
-  }
-  cuerpo += '---------------------------------
-';
-  cuerpo += 'Sistema de Mantenimiento Correctivo - Casino Santa Fe';
-
-  showLoading('Enviando reporte...');
-  fetch(API_URL, {
-    method: 'POST',
-    body: JSON.stringify({ action: 'reporte', cuerpo: cuerpo, fecha: fecha }),
-    headers: { 'Content-Type': 'text/plain;charset=utf-8' }
-  }).then(function(r){ return r.json(); }).then(function(d){
-    hideLoading();
-    if(d.ok) showAlert('✅ Reporte enviado correctamente.','success');
-    else showAlert('⚠ Error al enviar: '+(d.error||'desconocido'),'danger');
-  }).catch(function(e){
-    hideLoading();
-    showAlert('⚠ Error de conexión.','danger');
-  });
 }
 
 // ── INIT ──────────────────────────────────────────────────────
