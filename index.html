@@ -148,26 +148,6 @@
       <button class="btn btn-primary" onclick="showTab('egreso');resetEgresoForm()">+ Nueva Máquina Fuera de Servicio</button>
     </div>
     <div id="lista-records" class="records"></div>
-
-    <!-- SECCIÓN PDFs por rango de fecha -->
-    <div style="margin-top:24px;padding-top:16px;border-top:1px solid var(--border);">
-      <div style="display:flex;align-items:center;gap:10px;margin-bottom:12px;flex-wrap:wrap;">
-        <span style="font-size:12px;color:var(--accent);font-weight:600;text-transform:uppercase;letter-spacing:1px;">📄 PDFs — Máquinas Reingresadas</span>
-      </div>
-      <div style="display:flex;gap:10px;align-items:flex-end;flex-wrap:wrap;margin-bottom:12px;">
-        <div style="display:flex;flex-direction:column;gap:4px;">
-          <label style="font-size:11px;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.5px;">Desde</label>
-          <input type="date" id="pdf-fecha-desde" style="background:var(--surface2);border:1px solid rgba(255,255,255,0.1);border-radius:6px;color:var(--text);padding:7px 10px;font-size:13px;font-family:var(--font);outline:none;">
-        </div>
-        <div style="display:flex;flex-direction:column;gap:4px;">
-          <label style="font-size:11px;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.5px;">Hasta</label>
-          <input type="date" id="pdf-fecha-hasta" style="background:var(--surface2);border:1px solid rgba(255,255,255,0.1);border-radius:6px;color:var(--text);padding:7px 10px;font-size:13px;font-family:var(--font);outline:none;">
-        </div>
-        <button class="btn btn-sm btn-primary" onclick="filtrarPDFs()">🔍 Buscar</button>
-        <button class="btn btn-sm" onclick="limpiarFiltroPDFs()">✕ Limpiar</button>
-      </div>
-      <div id="pdf-resultados"></div>
-    </div>
   </div>
 
   <!-- EGRESO -->
@@ -363,7 +343,7 @@
 </div>
 
 <script>
-const API_URL = 'https://script.google.com/macros/s/AKfycbyUBeEmbuKdodt7ZuX3tzDXtoRvnfN27Snh9Z3MvRKdcSbQ65kN2_gHU8yzC15ibKLz/exec';
+const API_URL = 'https://script.google.com/macros/s/AKfycbys0iykFsoOUeZCDX_5cb9muaPkZnNmGL1_0ILfwZjUdwsxeTsZA2NEncqA7f_q-QeU/exec';
 let registros = [];
 let currentTecnicoId = null;
 let currentInspectorId = null;
@@ -877,56 +857,6 @@ async function guardarEdicionEgreso() {
   updateCounters();
   showTab('lista');
   showAlert('✅ Registro actualizado correctamente.','success');
-}
-
-function filtrarPDFs() {
-  var desde = document.getElementById('pdf-fecha-desde').value;
-  var hasta = document.getElementById('pdf-fecha-hasta').value;
-  var cont = document.getElementById('pdf-resultados');
-
-  if(!desde && !hasta) {
-    cont.innerHTML = '<p style="color:var(--text-muted);font-size:13px;">Seleccioná al menos una fecha para filtrar.</p>';
-    return;
-  }
-
-  var desdeDate = desde ? new Date(desde + 'T00:00:00') : null;
-  var hastaDate = hasta ? new Date(hasta + 'T23:59:59') : null;
-
-  var resultados = registros.filter(function(r) {
-    if(r.estado !== 'completo') return false;
-    var fechaIngreso = r.inspector && r.inspector.fecha ? new Date(r.inspector.fecha) : null;
-    if(!fechaIngreso) return false;
-    if(desdeDate && fechaIngreso < desdeDate) return false;
-    if(hastaDate && fechaIngreso > hastaDate) return false;
-    return true;
-  }).sort(function(a,b){
-    return new Date(b.inspector.fecha) - new Date(a.inspector.fecha);
-  });
-
-  if(!resultados.length) {
-    cont.innerHTML = '<p style="color:var(--text-muted);font-size:13px;">No hay máquinas reingresadas en ese rango de fechas.</p>';
-    return;
-  }
-
-  cont.innerHTML = '<p style="font-size:12px;color:var(--text-muted);margin-bottom:10px;">' + resultados.length + ' registro' + (resultados.length>1?'s':'') + ' encontrado' + (resultados.length>1?'s':'') + '</p>' +
-    resultados.map(function(r) {
-      return '<div class="record-card" style="margin-bottom:8px;">' +
-        '<span class="rc-status">✅</span>' +
-        '<div class="rc-info">' +
-          '<h3>Máquina ' + r.egreso.maquina + ' &nbsp;·&nbsp; Isla ' + r.egreso.isla + '</h3>' +
-          '<p>' + r.egreso.motivo + ' · Reingreso: ' + formatFecha(r.inspector.fecha) + ' · Inspector: ' + r.inspector.inspector + '</p>' +
-        '</div>' +
-        '<div class="rc-actions">' +
-          '<button class="btn btn-sm btn-primary" onclick="generarPDF('' + r.id + '')">⬇ PDF</button>' +
-        '</div>' +
-      '</div>';
-    }).join('');
-}
-
-function limpiarFiltroPDFs() {
-  document.getElementById('pdf-fecha-desde').value = '';
-  document.getElementById('pdf-fecha-hasta').value = '';
-  document.getElementById('pdf-resultados').innerHTML = '';
 }
 
 function irTecnico(id){ var r=registros.find(function(x){ return x.id===id; }); showTab('tecnico'); document.getElementById('t-buscar-maq').value=r.egreso.maquina; buscarParaTecnico(); }
