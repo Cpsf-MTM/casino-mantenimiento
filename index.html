@@ -773,6 +773,7 @@ function renderLista(){
   var bc={egreso:'badge-warning',tecnico:'badge-info',completo:'badge-success'};
   cont.innerHTML=list.map(function(r){
     var actions='';
+    if(r.estado==='egreso') actions+='<button class="btn btn-sm" onclick="editarEgreso(\''+r.id+'\')">✏️ Editar</button>';
     if(r.estado==='egreso') actions+='<button class="btn btn-sm" onclick="irTecnico(\''+r.id+'\')">🔧 Reparar</button>';
     if(r.estado==='tecnico') actions+='<button class="btn btn-sm" onclick="irInspector(\''+r.id+'\')">🔍 Inspeccionar</button>';
     if(r.estado==='completo') actions+='<button class="btn btn-sm btn-primary" onclick="generarPDF(\''+r.id+'\')">⬇ PDF</button>';
@@ -782,6 +783,80 @@ function renderLista(){
       '<p>'+r.egreso.motivo+' · Egreso: '+formatFecha(r.egreso.fecha)+' · Operador: '+r.egreso.operador+'</p></div>'+
       '<div class="rc-actions">'+actions+'</div></div>';
   }).join('');
+}
+
+function editarEgreso(id) {
+  var r = registros.find(function(x){ return x.id===id; });
+  if(!r || r.estado !== 'egreso') {
+    showAlert('Este registro ya no se puede editar.','info');
+    return;
+  }
+  // Guardar el id que se está editando
+  window._editandoId = id;
+  // Pre-cargar el formulario con los datos existentes
+  document.getElementById('e-maquina').value = r.egreso.maquina || '';
+  document.getElementById('e-isla').value = r.egreso.isla || '';
+  document.getElementById('e-fecha').value = r.egreso.fecha || '';
+  document.getElementById('e-motivo').value = r.egreso.motivo || '';
+  document.getElementById('e-coinin').value = r.egreso.coinin || '';
+  document.getElementById('e-coinout').value = r.egreso.coinout || '';
+  document.getElementById('e-jackpot').value = r.egreso.jackpot || '';
+  document.getElementById('e-prog1').value = r.egreso.prog1 || '';
+  document.getElementById('e-prog2').value = r.egreso.prog2 || '';
+  document.getElementById('e-prog3').value = r.egreso.prog3 || '';
+  document.getElementById('e-prog4').value = r.egreso.prog4 || '';
+  document.getElementById('e-devolucion').value = r.egreso.devolucion || '';
+  document.getElementById('e-operador').value = r.egreso.operador || '';
+  clearCanvas('canvas-egreso');
+  clearFoto();
+  // Cambiar título y botón para modo edición
+  document.getElementById('btn-guardar-egreso').textContent = '💾 Guardar Cambios';
+  document.getElementById('btn-guardar-egreso').onclick = function(){ guardarEdicionEgreso(); };
+  showTab('egreso');
+}
+
+async function guardarEdicionEgreso() {
+  var id = window._editandoId;
+  if(!id) return;
+  var maquina = document.getElementById('e-maquina').value.trim();
+  var isla = document.getElementById('e-isla').value.trim();
+  var fecha = document.getElementById('e-fecha').value;
+  var motivo = document.getElementById('e-motivo').value;
+  var operador = document.getElementById('e-operador').value.trim();
+  if(!maquina||!isla||!fecha||!motivo||!operador){ showAlert('Completar campos obligatorios.','info'); return; }
+  var btn = document.getElementById('btn-guardar-egreso');
+  btn.disabled = true;
+  showLoading('Guardando cambios...');
+  var idx = registros.findIndex(function(x){ return x.id===id; });
+  // Actualizar solo los datos del egreso, mantener id y estado
+  registros[idx].egreso.maquina = maquina;
+  registros[idx].egreso.isla = isla;
+  registros[idx].egreso.fecha = fecha;
+  registros[idx].egreso.motivo = motivo;
+  registros[idx].egreso.coinin = document.getElementById('e-coinin').value;
+  registros[idx].egreso.coinout = document.getElementById('e-coinout').value;
+  registros[idx].egreso.jackpot = document.getElementById('e-jackpot').value;
+  registros[idx].egreso.prog1 = document.getElementById('e-prog1').value;
+  registros[idx].egreso.prog2 = document.getElementById('e-prog2').value;
+  registros[idx].egreso.prog3 = document.getElementById('e-prog3').value;
+  registros[idx].egreso.prog4 = document.getElementById('e-prog4').value;
+  registros[idx].egreso.devolucion = document.getElementById('e-devolucion').value;
+  registros[idx].egreso.operador = operador;
+  // Actualizar firma si se volvió a firmar
+  var nuevaFirma = getFirma('canvas-egreso');
+  if(nuevaFirma) registros[idx].egreso.firma = nuevaFirma;
+  var nuevaFoto = getFotoData();
+  if(nuevaFoto) registros[idx].egreso.foto = nuevaFoto;
+  var ok = await guardarEnAPI('update', flattenRegistro(registros[idx]));
+  hideLoading(); btn.disabled = false;
+  if(!ok) return;
+  // Restaurar botón original
+  window._editandoId = null;
+  document.getElementById('btn-guardar-egreso').textContent = '📤 Registrar Egreso y Enviar Aviso';
+  document.getElementById('btn-guardar-egreso').onclick = function(){ guardarEgreso(); };
+  updateCounters();
+  showTab('lista');
+  showAlert('✅ Registro actualizado correctamente.','success');
 }
 
 function irTecnico(id){ var r=registros.find(function(x){ return x.id===id; }); showTab('tecnico'); document.getElementById('t-buscar-maq').value=r.egreso.maquina; buscarParaTecnico(); }
